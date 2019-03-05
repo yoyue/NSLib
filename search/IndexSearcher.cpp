@@ -108,6 +108,12 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   if (scorer == NULL)
     return *new TopDocs(0, new ScoreDoc*[0], 0, "");
 
+ // char* groupWC = NSL_wideToChar(wgroupby);   
+ // string group = static_cast<string>(wgroupby->c_str());
+  
+ // bool isGroup = group.empty();
+ // delete[] groupWC;
+
   const BitSet* bits = filter != NULL ? filter->bits(reader) : NULL;
   HitQueue& hq = *new HitQueue(nDocs);
   int* totalHits = new int[1];
@@ -121,32 +127,27 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
     return *new TopDocs(0, new ScoreDoc*[0], 0, "");
 
   ScoreDoc** scoreDocs = new ScoreDoc*[hq.Size()];
-
   // totalHits[0] = scoreDocsLength;
   cerr << " IndexSearcher::search got " << scoreDocsLength << " results" << endl; 
 
-  char* groupWC = NSL_wideToChar(wgroupby);
-   
-  string group = static_cast<string>(groupWC);
-  bool isContinue = (group.empty() || totalHits[0] > scoreDocsLength);
-  delete[] groupWC;
-
+  bool isContinue = (ws2str(wgroupby).empty() || totalHits[0] > scoreDocsLength);
   typedef std::map<std::string, int> GroupbyMap;
   GroupbyMap groupby;
 
   for (int i = hq.Size()-1; i >= 0; i--) {  // put docs in array   
     scoreDocs[i] = hq.pop();
 
-    if (isContinue || i>nDocs) continue;
+    if (isContinue || i > nDocs) continue;
 
     Field* field = NULL;
     Document& doc = reader.document(scoreDocs[i]->doc);
    
     if (doc.getField(wgroupby, field)) {
-      const char_t* v = field->StringValue();      
-      char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");
-      
-      string iv = static_cast<string>(value);
+      const char_t* v = field->StringValue(); 
+      string iv = ws2str(v);     
+
+      //char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");      
+     // string iv = static_cast<string>(value);
       for(auto c : iv){
         if(!isdigit(c)){
           iv = "0";
@@ -158,7 +159,7 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
       if(!ret.second)
         ++ret.first->second;
       
-      delete[] value;
+      //delete[] value;
     }
     delete &doc;    
   }

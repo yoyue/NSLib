@@ -60,7 +60,7 @@ public:
   void search();
   void search(Headers header, request_ptr request_ptr, tcp::connection_ptr tcp_conn);
   void searchInDatabase(string database, Query* query,
-             u16string wgroupby, WStringVec& showFields, int numResults);
+             u16string wgroupby, WStringVec& showFields, int numResults, bool cover);
 
   string m_indexBase;
   map<string, IndexSearcher*> searcherMap;

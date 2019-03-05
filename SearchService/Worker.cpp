@@ -101,15 +101,15 @@ namespace UBCService {
 
   //string result = prv_search(database, wgroupby, showFields, numResults);
   void searcherThread(Worker* worker, string database, Query* query,
-    u16string wgroupby, u16string showfield, int numResults)
+    u16string wgroupby, u16string showfield, int numResults, bool needCover)
   {
     WStringVec showFields;
     Headers::getShowFields(showFields, showfield);
-    worker->searchInDatabase(database, query, wgroupby, showFields, numResults);
+    worker->searchInDatabase(database, query, wgroupby, showFields, numResults, needCover);
   }
 
   void Worker::searchInDatabase(string database, Query* query,
-    u16string wgroupby, WStringVec& showFields, int numResults)
+    u16string wgroupby, WStringVec& showFields, int numResults, bool needCover)
   {
     IndexSearcher* searcher = searcherMap[database];
     //string result = "{ \"stat\":[{\"database\":{\"" + database + "\":\"" ;
@@ -137,7 +137,7 @@ namespace UBCService {
     }
     else{
       count = NSL_HitCount(hits);
-      if(count==0)
+      if(count == 0)
         groupMap[database] = "";
       else {
         const char* groupby_str = NSL_HitGroupby(hits);
@@ -146,45 +146,78 @@ namespace UBCService {
         //printf( "     keywords: %s\n", keywords );
         printf(" %s >>>> found %d results, groupby: %s\n",
           database.c_str(), count, groupby_str);
-        // result += boost::str(boost::format(", \"group\":{%s},\"result\":[") 
-         //                   % groupby_str);
 
         result += ",\"result\":[";
-        for (int i = 0; i < (std::min)(numResults, count); i++) {
-          result += (i == 0) ? "{" : ",{";
+        int showCount = 0;
+        bool firstRecord = true;
+        int  posCount = count;
+        //for (int i = 0; i < (std::min)(numResults, count); i++) {
+        for (int i = 0; i < posCount; i++) {
+          if(showCount == numResults) break;
+          //result += (i == 0) ? "{" : ",{";
           void* doc = NSL_Hit(hits, i);
-          //bool firstField = true;
-          //for (WStringVec::iterator it = showFields.begin(); it != showFields.end(); it++)
+
+          string record = "";
+          bool firstField = true;        
           for (int j = 0; j < (int)showFields.size(); j++)
           {
             const char16_t* it = showFields[j].c_str();
             char* showField = NSL_wideToChar(it);//it->c_str()
             //printf( "%s: %ld\n", showField.c_str(), doc);
-            result += j == 0 ? "" : ",";
-            //result += firstField ? "" : ",";
             char16_t* val = NSL_WGet_Field(doc, it);//it->c_str()
             if (val != NULL) {
               std::u16string valStr = val;
+
+              if (!needCover){
+                const char* ff = "PathInnerXml";
+                if (strcmp(ff,(const char*) showField) == 0){
+                  bool isCover = (valStr.find(u"封面") != string::npos);
+                  if(!isCover){
+                    isCover = (valStr.find(u"封底") != string::npos);
+                  }
+                  if (isCover){
+                    record = "";
+                    count--;
+                    delete[] showField;
+                    break;
+                  }
+                }
+              }
+              if (firstField)
+                firstField = false;
+              else
+                record += ",";
+
               int len = valStr.length() * sizeof(char16_t);
               size_t base64_output_length;
               char* base64_output = Base64::encode((const unsigned char*)val, len,
                 base64_output_length);
-              result += boost::str(boost::format(" \"%s\":\"%s\"")
+              record += boost::str(boost::format(" \"%s\":\"%s\"")
                 % showField % base64_output);
               NSL_WFree_Field(val);
               delete[] base64_output;
             }
             else {
-              result += boost::str(boost::format(" \"%s\":\"\"") % showField);
+              if (firstField)
+                firstField = false;
+              else
+                record += ",";
+              record += boost::str(boost::format(" \"%s\":\"\"") % showField);
             }
-            //firstField = false;
-            
             delete[] showField;
           }
-          result += "}";
-        }
-        result += "]";
 
+          if(record.size() > 2){
+            showCount++;  
+            result += firstRecord ? "{" : ",{" ;
+            result += record ;
+            result += "}";
+            if(firstRecord)
+              firstRecord = false;
+          }          
+        }
+
+        result += "]";
       }
       delete ((Hits*)hits);
     }
@@ -232,6 +265,7 @@ namespace UBCService {
       wfield = header.field,
       wgroupby = header.groupby;
     int numResults = header.numResults;
+    bool needCover = header.needCover == "cover" ? true : false;
 
     int qlen = wquery.length() * sizeof(char16_t);
     char* wq = (char*)wquery.c_str();
@@ -254,7 +288,7 @@ namespace UBCService {
       for (auto database : databases)
       {
         std::thread* t = new thread(searcherThread, this, database, query,
-          wgroupby, header.showfield, numResults);
+          wgroupby, header.showfield, numResults, needCover);
         pool.push_back(t);
       }
       /*for (StrVecIter it = databases.begin(); it != databases.end(); it++) {
@@ -279,8 +313,9 @@ namespace UBCService {
         result += boost::str(boost::format(" \"%s\": { \"count\": \"%d\"")
           % dbName % count);
         if (count != 0) {
-          result += boost::str(boost::format(", \"group\":{%s}")
-            % groupMap[dbName]);
+          if(!wgroupby.empty())
+            result += boost::str(boost::format(", \"group\":{%s}")
+              % groupMap[dbName]);
 
           if (showTotal < numResults) {
             result += resultMap[dbName];
