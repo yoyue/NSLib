@@ -101,20 +101,20 @@ namespace UBCService {
 
   //string result = prv_search(database, wgroupby, showFields, numResults);
   void searcherThread(Worker* worker, string database, Query* query,
-    u16string wgroupby, u16string showfield, int numResults, bool needCover)
+    u16string wgroupby, u16string showfield, int numResults)
   {
     WStringVec showFields;
     Headers::getShowFields(showFields, showfield);
-    worker->searchInDatabase(database, query, wgroupby, showFields, numResults, needCover);
+    worker->searchInDatabase(database, query, wgroupby, showFields, numResults);
   }
 
   void Worker::searchInDatabase(string database, Query* query,
-    u16string wgroupby, WStringVec& showFields, int numResults, bool needCover)
+    u16string wgroupby, WStringVec& showFields, int numResults)
   {
     IndexSearcher* searcher = searcherMap[database];
     //string result = "{ \"stat\":[{\"database\":{\"" + database + "\":\"" ;
     //string result = " \"" + database + "\": { \"count\": \"" ;
-    cerr << endl << "@@@@@@@@@ Worker::search: " << database << " " << endl;
+    cerr << endl << "@@@@@@@@@ Worker::search: " << database << " numResults: " << numResults << endl;
     Hits* hits = NULL;
     try {
       if (query != NULL) {
@@ -144,40 +144,20 @@ namespace UBCService {
           database.c_str(), count, groupby_str);
 
         result = ", \"result\":[";
-        int showCount = 0;
-        int  posCount = count;
-        //for (int i = 0; i < (std::min)(numResults, count); i++) {
-        for (int i = 0; i < posCount; i++) {
-          //result += (i == 0) ? "{" : ",{";
+         
+        for (int i = 0; i < (std::min)(numResults, count); i++) {
+          
+          string record = (i == 0) ? "{" : ",{";
           void* doc = NSL_Hit(hits, i);
-
-          string record;     
+    
           for (int j = 0; j < (int)showFields.size(); j++) {
-            if (j != 0)
-              record += ",";
+            if (j != 0) record += ",";
             const char16_t* it = showFields[j].c_str();
             char* showField = NSL_wideToChar(it);//it->c_str()
             //printf( "%s: %ld\n", showField.c_str(), doc);
             char16_t* val = NSL_WGet_Field(doc, it);//it->c_str()
             if (val != NULL) {
               std::u16string valStr = val;
-
-              if (!needCover) {
-                const char* ff = "PathInnerXml";
-                if (strcmp(ff,(const char*) showField) == 0) {                  
-                  bool isCover = (valStr.find(u"封面") != string::npos);
-                  if (!isCover)
-                    isCover = (valStr.find(u"封底") != string::npos);
-                  
-                  if (isCover) {
-                    record = "";
-                    count--;
-                    delete[] showField;
-                    break;
-                  }
-                }
-              }
-
               int len = valStr.length() * sizeof(char16_t);
               size_t base64_output_length;
               char* base64_output = Base64::encode((const unsigned char*)val, len,
@@ -193,13 +173,8 @@ namespace UBCService {
             delete[] showField;
           }
 
-          if (record.size() != 0) {
-            ++showCount;  
-            result += showCount == 1 ? "{" : ",{";
-            result += record + "}";
-            if (showCount == numResults) break;
-          }
-
+          record += "}";
+          result += record;
         }
 
         result += "]";
@@ -251,8 +226,6 @@ namespace UBCService {
       wfield = header.field,
       wgroupby = header.groupby;
     int numResults = header.numResults;
-    bool needCover = (header.needCover == "cover");
-    bool isgroupby =ws2str(const_cast<char_t*>(wgroupby.c_str())).empty();
 
     int qlen = wquery.length() * sizeof(char16_t);
     string result = qlen == 0 ? "{}" : "{";
@@ -273,7 +246,7 @@ namespace UBCService {
       for (auto database : databases)
       {
         std::thread* t = new thread(searcherThread, this, database, query,
-          wgroupby, header.showfield, numResults, needCover);
+          wgroupby, header.showfield, numResults);
         pool.push_back(t);
       }
       /*for (StrVecIter it = databases.begin(); it != databases.end(); it++) {
@@ -285,6 +258,8 @@ namespace UBCService {
       }*/
       std::this_thread::sleep_for(nanoseconds(1000));
       int showTotal = 0;
+      bool isgroupby = !ws2str(const_cast<char_t*>(wgroupby.c_str())).empty();
+      //bool isgroupby = !wgroupby.empty();
       for (int i = 0; i < (int)pool.size(); i++) {
         thread *t = pool[i];
         t->join();
@@ -301,7 +276,7 @@ namespace UBCService {
           // if (!groupMap[dbName].empty())
           //   result += boost::str(boost::format(", \"group\":{%s}")
           //     % groupMap[dbName]);
-          if (!isgroupby)
+          if (isgroupby)
             result += groupMap[dbName];
 
           if (showTotal < numResults) {

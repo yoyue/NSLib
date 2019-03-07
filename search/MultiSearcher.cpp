@@ -79,14 +79,14 @@ int MultiSearcher::maxDoc() const
   return _maxDoc;
 }
 
-TopDocs& MultiSearcher::Search(Query& query, const Filter* filter, const int nDocs, char_t* wgroupby) 
+TopDocs& MultiSearcher::Search(Query& query, const Filter* filter, const int nDocs, int numResults, char_t* wgroupby) 
 {
   HitQueue* hq = new HitQueue(nDocs);
   float minScore = 0.0f;
   int totalHits = 0;
 
   for (int i = 0; i < searchersLen; i++) {  // search each searcher
-    TopDocs* docs = &searchers[i]->Search(query, filter, nDocs, 0, wgroupby);
+    TopDocs* docs = &searchers[i]->Search(query, filter, nDocs, numResults, wgroupby);
     totalHits += docs->totalHits;		  // update totalHits
     ScoreDoc** scoreDocs = docs->scoreDocs;
 	  int scoreDocsLen = docs->scoreDocsLength;

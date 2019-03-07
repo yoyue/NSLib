@@ -16,7 +16,7 @@ using namespace NSLib::document;
 
 namespace NSLib{ namespace search {
 
-class SimpleTopDocsCollector:public HitCollector{ 
+class SimpleTopDocsCollector: public HitCollector{ 
 private:
   float minScore;
   const BitSet* bits;
@@ -42,7 +42,7 @@ protected:
 };
 
 // Implements search over a single IndexReader. 
-class IndexSearcher:public Searcher{
+class IndexSearcher: public Searcher{
 private:
   IndexReader& reader;
   bool readerOwner;
@@ -66,7 +66,7 @@ public:
 
   int maxDoc() const;
 
-  TopDocs& Search(Query& query, const Filter* filter, const int nDocs, int numResults,
+  TopDocs& Search(Query& query, const Filter* filter, const int nDocs,  int numResults,
                   char_t* wgroupby);
 
   // Lower-level search API.

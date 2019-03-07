@@ -69,7 +69,6 @@ struct Headers
       userAgent(http_request->get_header(HTTPTypes::HEADER_USER_AGENT)),
       databases(getOptionalParameter<string>(http_request, "databases", "")),
       numResults(getOptionalParameter<int>(http_request, "numResults", 500)),
-      needCover(getOptionalParameter<string>(http_request, "needCover", "")),
       query(getOptionalParameter<string>(http_request, "q", ""))
   {
     //std::cerr << query << std::endl;
@@ -252,7 +251,6 @@ public:
   vector<string> databaseVec;
 
   int numResults;
-  string needCover;
   string query;
   std::u16string searchQuery;
   std::u16string field;

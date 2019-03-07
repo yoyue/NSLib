@@ -101,9 +101,9 @@ int IndexSearcher::maxDoc() const {
 }
 
 TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
-                               const int nDocs, int numResults, char_t* wgroupby)
+                               const int nDocs, const int numResults, char_t* wgroupby)
 {
-  cerr << "IndexSearcher::Search " << endl;//bDics Hits.maxDocs(50000)
+  cerr << "IndexSearcher::Search nDocs: " << nDocs << endl;//bDics Hits.maxDocs(50000)
 
   Scorer* scorer = Query::scorer(query, *this, reader);
   if (scorer == NULL)
@@ -115,8 +115,9 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   totalHits[0] = 0;
     
   SimpleTopDocsCollector hitCol(bits, hq, totalHits, nDocs, 0.0f);
-  scorer->score( hitCol, reader.MaxDoc());
+  scorer->score(hitCol, reader.MaxDoc());
   int scoreDocsLength = hq.Size();
+  //int scoreDocsLength =std::min(hq.Size(), nDocs);
   
   string groupby_str;  
   int totalHitsInt = totalHits[0];
@@ -125,21 +126,20 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   if (scoreDocsLength == 0)
     scoreDocs = new ScoreDoc*[0];
   else {
+
+    scoreDocs = new ScoreDoc*[scoreDocsLength];
+    bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > nDocs);
+    if(isContinue && scoreDocsLength > numResults && numResults != 0)
+      scoreDocsLength = numResults;
+
     cerr << " IndexSearcher::search got " << totalHitsInt << " results" << endl; 
-   
-    //bool isContinue = (ws2str(wgroupby).empty() || scoreDocsLength > nDocs || totalHitsInt > scoreDocsLength);
-    bool isContinue = ws2str(wgroupby).empty();
+    //cerr << " 0-nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
+
+    //bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > scoreDocsLength);
     typedef std::map<std::string, int> GroupbyMap;
     GroupbyMap groupby;
-     
-    int needLength = scoreDocsLength;
-    if (isContinue && numResults != 0)
-      needLength = std::min(numResults,scoreDocsLength);
-
-    scoreDocs = new ScoreDoc*[needLength];
-    for (int i = needLength - 1; i >= 0; i--) {  // put docs in array
+    for (int i = 0; i < scoreDocsLength; i++) {  // put docs in array
       scoreDocs[i] = hq.pop();
-
       if (isContinue) continue;
 
       Field* field = NULL;
@@ -164,7 +164,7 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
       }
       delete &doc;    
     }
-
+ 
     // cerr << " nDocs: " << nDocs  << " count: " << count << " totalHitsInt: " << totalHits[0]<< endl; 
     for (GroupbyMap::iterator it = groupby.begin(); it!=groupby.end(); ++it) {
       //"1928": "39", "1929": "56"
@@ -176,15 +176,20 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
     }
     cerr << " nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
   }
-   
+
  // cerr << "aac  groupby_str: " << groupby_str << endl;
   // cerr << " aac1 totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: "  << scoreDocsLength << endl; 
+
+  while (hq.Size() != 0)
+    hq.pop();
+
   delete &hq;
+
   if (bits != NULL)
     delete bits;
+
   delete[] totalHits;
   delete scorer;
-
   return *new TopDocs(totalHitsInt, scoreDocs, scoreDocsLength, groupby_str);
 }
 /*
