@@ -119,7 +119,7 @@ namespace UBCService {
     try {
       if (query != NULL) {
         cerr << " $$$$$ WSearch  ... " << database << endl;
-        hits = &searcher->search(*query, const_cast<char_t*>(wgroupby.c_str()));
+        hits = &searcher->search(*query, numResults, const_cast<char_t*>(wgroupby.c_str()));
         cerr << " $$$$$$$$$ WSearch done. " << database << endl;
       }
     }
@@ -131,36 +131,30 @@ namespace UBCService {
       cerr << "exception caught: Unknown error" << endl;
     }
     int count = 0;
-    string result = "";
-    if (hits == NULL) {
-      groupMap[database] = "";
-    }
-    else{
+    string result;
+    string groupStr;
+    if (hits != NULL) {
       count = NSL_HitCount(hits);
-      if(count == 0)
-        groupMap[database] = "";
-      else {
+      if (count != 0) {
         const char* groupby_str = NSL_HitGroupby(hits);
-        groupMap[database] = groupby_str;
-        
+        groupStr = boost::str(boost::format(", \"group\":{%s}")
+              % groupby_str);
         //printf( "     keywords: %s\n", keywords );
         printf(" %s >>>> found %d results, groupby: %s\n",
           database.c_str(), count, groupby_str);
 
-        result += ",\"result\":[";
+        result = ", \"result\":[";
         int showCount = 0;
-        bool firstRecord = true;
         int  posCount = count;
         //for (int i = 0; i < (std::min)(numResults, count); i++) {
         for (int i = 0; i < posCount; i++) {
-          if(showCount == numResults) break;
           //result += (i == 0) ? "{" : ",{";
           void* doc = NSL_Hit(hits, i);
 
-          string record = "";
-          bool firstField = true;        
-          for (int j = 0; j < (int)showFields.size(); j++)
-          {
+          string record;     
+          for (int j = 0; j < (int)showFields.size(); j++) {
+            if (j != 0)
+              record += ",";
             const char16_t* it = showFields[j].c_str();
             char* showField = NSL_wideToChar(it);//it->c_str()
             //printf( "%s: %ld\n", showField.c_str(), doc);
@@ -168,14 +162,14 @@ namespace UBCService {
             if (val != NULL) {
               std::u16string valStr = val;
 
-              if (!needCover){
+              if (!needCover) {
                 const char* ff = "PathInnerXml";
-                if (strcmp(ff,(const char*) showField) == 0){
+                if (strcmp(ff,(const char*) showField) == 0) {                  
                   bool isCover = (valStr.find(u"封面") != string::npos);
-                  if(!isCover){
+                  if (!isCover)
                     isCover = (valStr.find(u"封底") != string::npos);
-                  }
-                  if (isCover){
+                  
+                  if (isCover) {
                     record = "";
                     count--;
                     delete[] showField;
@@ -183,10 +177,6 @@ namespace UBCService {
                   }
                 }
               }
-              if (firstField)
-                firstField = false;
-              else
-                record += ",";
 
               int len = valStr.length() * sizeof(char16_t);
               size_t base64_output_length;
@@ -198,23 +188,18 @@ namespace UBCService {
               delete[] base64_output;
             }
             else {
-              if (firstField)
-                firstField = false;
-              else
-                record += ",";
               record += boost::str(boost::format(" \"%s\":\"\"") % showField);
             }
             delete[] showField;
           }
 
-          if(record.size() > 2){
-            showCount++;  
-            result += firstRecord ? "{" : ",{" ;
-            result += record ;
-            result += "}";
-            if(firstRecord)
-              firstRecord = false;
-          }          
+          if (record.size() != 0) {
+            ++showCount;  
+            result += showCount == 1 ? "{" : ",{";
+            result += record + "}";
+            if (showCount == numResults) break;
+          }
+
         }
 
         result += "]";
@@ -223,6 +208,7 @@ namespace UBCService {
     }
     totalMap[database] = count;
     resultMap[database] = result;
+    groupMap[database] = groupStr;
   }
 
 
@@ -265,18 +251,17 @@ namespace UBCService {
       wfield = header.field,
       wgroupby = header.groupby;
     int numResults = header.numResults;
-    bool needCover = header.needCover == "cover" ? true : false;
+    bool needCover = (header.needCover == "cover");
+    bool isgroupby =ws2str(const_cast<char_t*>(wgroupby.c_str())).empty();
 
     int qlen = wquery.length() * sizeof(char16_t);
-    char* wq = (char*)wquery.c_str();
-    for (int i = 0; i < qlen; i++)
-      cerr << hex << (int)(unsigned char)wq[i] << " ";
-    cerr << endl;
+    string result = qlen == 0 ? "{}" : "{";
 
-    string result = "{";
-    if (qlen == 0)
-      result += "}";
-    else {
+    if (qlen != 0) {
+      char* wq = (char*)wquery.c_str();
+      for (int i = 0; i < qlen; i++)
+        cerr << hex << (int)(unsigned char)wq[i] << " ";
+      cerr << endl;
       wprintf(L" query: %hs \n", wquery.c_str());
 
       ChineseAnalyzer analyzer;
@@ -310,12 +295,14 @@ namespace UBCService {
         string dbName = databases[i];
         int count = totalMap[dbName];
 
-        result += boost::str(boost::format(" \"%s\": { \"count\": \"%d\"")
+        result += boost::str(boost::format(" \"%s\": {\"count\":\"%d\"")
           % dbName % count);
         if (count != 0) {
-          if(!wgroupby.empty())
-            result += boost::str(boost::format(", \"group\":{%s}")
-              % groupMap[dbName]);
+          // if (!groupMap[dbName].empty())
+          //   result += boost::str(boost::format(", \"group\":{%s}")
+          //     % groupMap[dbName]);
+          if (!isgroupby)
+            result += groupMap[dbName];
 
           if (showTotal < numResults) {
             result += resultMap[dbName];
@@ -330,10 +317,8 @@ namespace UBCService {
     cerr << getTimeString() << "writing results" << endl;
 
     // Set Content-type to "text/plain" (plain ascii text)
-    response_writer_ptr writer(response_writer::create(job.tcp_conn,
-      *job.http_request_ptr,
-      boost::bind(&tcp::connection::finish,
-        job.tcp_conn)));
+    response_writer_ptr writer(response_writer::create(job.tcp_conn, *job.http_request_ptr,
+      boost::bind(&tcp::connection::finish, job.tcp_conn)));
     writer->get_response().set_content_type(http::types::CONTENT_TYPE_TEXT);
     writer << result << http::types::STRING_CRLF;
     writer->send();

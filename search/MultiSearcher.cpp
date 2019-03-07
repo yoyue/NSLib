@@ -86,7 +86,7 @@ TopDocs& MultiSearcher::Search(Query& query, const Filter* filter, const int nDo
   int totalHits = 0;
 
   for (int i = 0; i < searchersLen; i++) {  // search each searcher
-    TopDocs* docs = &searchers[i]->Search(query, filter, nDocs, wgroupby);
+    TopDocs* docs = &searchers[i]->Search(query, filter, nDocs, 0, wgroupby);
     totalHits += docs->totalHits;		  // update totalHits
     ScoreDoc** scoreDocs = docs->scoreDocs;
 	  int scoreDocsLen = docs->scoreDocsLength;

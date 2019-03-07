@@ -101,18 +101,13 @@ int IndexSearcher::maxDoc() const {
 }
 
 TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
-                               const int nDocs, char_t* wgroupby)
+                               const int nDocs, int numResults, char_t* wgroupby)
 {
-  cerr << "IndexSearcher::Search" << endl;
+  cerr << "IndexSearcher::Search " << endl;//bDics Hits.maxDocs(50000)
+
   Scorer* scorer = Query::scorer(query, *this, reader);
   if (scorer == NULL)
     return *new TopDocs(0, new ScoreDoc*[0], 0, "");
-
- // char* groupWC = NSL_wideToChar(wgroupby);   
- // string group = static_cast<string>(wgroupby->c_str());
-  
- // bool isGroup = group.empty();
- // delete[] groupWC;
 
   const BitSet* bits = filter != NULL ? filter->bits(reader) : NULL;
   HitQueue& hq = *new HitQueue(nDocs);
@@ -123,71 +118,72 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   scorer->score( hitCol, reader.MaxDoc());
   int scoreDocsLength = hq.Size();
   
-  if (scoreDocsLength == 0)
-    return *new TopDocs(0, new ScoreDoc*[0], 0, "");
-
-  ScoreDoc** scoreDocs = new ScoreDoc*[hq.Size()];
-  // totalHits[0] = scoreDocsLength;
-  cerr << " IndexSearcher::search got " << scoreDocsLength << " results" << endl; 
-
-  bool isContinue = (ws2str(wgroupby).empty() || totalHits[0] > scoreDocsLength);
-  typedef std::map<std::string, int> GroupbyMap;
-  GroupbyMap groupby;
-
-  for (int i = hq.Size()-1; i >= 0; i--) {  // put docs in array   
-    scoreDocs[i] = hq.pop();
-
-    if (isContinue || i > nDocs) continue;
-
-    Field* field = NULL;
-    Document& doc = reader.document(scoreDocs[i]->doc);
-   
-    if (doc.getField(wgroupby, field)) {
-      const char_t* v = field->StringValue(); 
-      string iv = ws2str(v);     
-
-      //char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");      
-     // string iv = static_cast<string>(value);
-      for(auto c : iv){
-        if(!isdigit(c)){
-          iv = "0";
-          break;
-        }
-      }
-      auto ret = groupby.insert({iv,1});
-      //auto ret = groupby.insert({value,1});
-      if(!ret.second)
-        ++ret.first->second;
-      
-      //delete[] value;
-    }
-    delete &doc;    
-  }
-
-  // cerr << " nDocs: " << nDocs  << " count: " << count << " totalHitsInt: " << totalHits[0]<< endl; 
   string groupby_str;  
-  for (GroupbyMap::iterator it = groupby.begin(); it!=groupby.end(); ++it) {
-    //"1928": "39", "1929": "56"
-    groupby_str += groupby_str.size()>0 ? ", " : "";
-    char tmp[1024];
-    sprintf(tmp, "\"%s\": \"%d\"", it->first.c_str(), it->second);
-    groupby_str += tmp;
-    //boost::str(boost::format("\"%s\": \"%d\"") 
-     //                    % it->first.c_str() % it->second);;
+  int totalHitsInt = totalHits[0];
+
+  ScoreDoc** scoreDocs = NULL;
+  if (scoreDocsLength == 0)
+    scoreDocs = new ScoreDoc*[0];
+  else {
+    cerr << " IndexSearcher::search got " << totalHitsInt << " results" << endl; 
+   
+    //bool isContinue = (ws2str(wgroupby).empty() || scoreDocsLength > nDocs || totalHitsInt > scoreDocsLength);
+    bool isContinue = ws2str(wgroupby).empty();
+    typedef std::map<std::string, int> GroupbyMap;
+    GroupbyMap groupby;
+     
+    int needLength = scoreDocsLength;
+    if (isContinue && numResults != 0)
+      needLength = std::min(numResults,scoreDocsLength);
+
+    scoreDocs = new ScoreDoc*[needLength];
+    for (int i = needLength - 1; i >= 0; i--) {  // put docs in array
+      scoreDocs[i] = hq.pop();
+
+      if (isContinue) continue;
+
+      Field* field = NULL;
+      Document& doc = reader.document(scoreDocs[i]->doc);
+     
+      if (doc.getField(wgroupby, field)) {
+        // const char_t* v = field->StringValue();
+        // char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");      
+        // string iv = static_cast<string>(value);
+        string iv = ws2str(field->StringValue());
+        for (auto c : iv) {
+          if (!isdigit(c)) {
+            iv = "0";
+            break;
+          }
+        }
+        auto ret = groupby.insert({iv, 1});
+        if (!ret.second)
+          ++ret.first->second;
+        
+        //delete[] value;
+      }
+      delete &doc;    
+    }
+
+    // cerr << " nDocs: " << nDocs  << " count: " << count << " totalHitsInt: " << totalHits[0]<< endl; 
+    for (GroupbyMap::iterator it = groupby.begin(); it!=groupby.end(); ++it) {
+      //"1928": "39", "1929": "56"
+      groupby_str += groupby_str.size() != 0 ? "," : "";
+      // char tmp[1024];
+      // sprintf(tmp, "\"%s\": \"%d\"", it->first.c_str(), it->second);
+      // groupby_str += tmp;
+      groupby_str += "\"" + it->first + "\":\"" + to_string(it->second) + "\"";
+    }
+    cerr << " nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
   }
    
  // cerr << "aac  groupby_str: " << groupby_str << endl;
-  int totalHitsInt = totalHits[0];
   // cerr << " aac1 totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: "  << scoreDocsLength << endl; 
   delete &hq;
-
-  if(bits!=NULL)
+  if (bits != NULL)
     delete bits;
   delete[] totalHits;
-
   delete scorer;
-
-  cerr << " nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl; 
 
   return *new TopDocs(totalHitsInt, scoreDocs, scoreDocsLength, groupby_str);
 }

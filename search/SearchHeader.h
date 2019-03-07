@@ -32,6 +32,7 @@ private:
   char_t* wgroupby;
       
   int length;          // the total number of hits
+  int numResults;      // shown results;
   string groupby_str;
   NSLib::util::VoidList<HitDoc*> hitDocs;    // cache of hits retrieved
       
@@ -41,7 +42,7 @@ private:
   int maxDocs;        // max to cache
 
 public:
-  Hits(Searcher& s, Query& q, const Filter* f, char_t* wgroupby);
+  Hits(Searcher& s, Query& q, const Filter* f, int numResults, char_t* wgroupby);
   ~Hits();
         
   // Returns the total number of hits available in this set. 
@@ -79,12 +80,12 @@ class Searcher
 public:
   virtual int docFreq(const Term& term)const = 0;
   virtual int maxDoc()const = 0;
-  virtual TopDocs& Search(Query& query, const Filter* filter, const int n, char_t* wgroupby) = 0;
+  virtual TopDocs& Search(Query& query, const Filter* filter, const int n, int numResults, char_t* wgroupby) = 0;
 
   virtual ~Searcher(){ }
   // Returns the documents matching <code>query</code>.
-  Hits& search(Query& query, char_t* wgroupby) {
-    return *new Hits(*this, query, NULL, wgroupby);
+  Hits& search(Query& query, int numResults, char_t* wgroupby) {
+    return *new Hits(*this, query, NULL, numResults, wgroupby);
   }
 
   // Lower-level search API.

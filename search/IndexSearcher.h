@@ -66,7 +66,7 @@ public:
 
   int maxDoc() const;
 
-  TopDocs& Search(Query& query, const Filter* filter, const int nDocs,
+  TopDocs& Search(Query& query, const Filter* filter, const int nDocs, int numResults,
                   char_t* wgroupby);
 
   // Lower-level search API.

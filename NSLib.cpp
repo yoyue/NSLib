@@ -244,7 +244,7 @@ NSLIBDLL_API void* NSL_WSearch(const fchar_t* wdir, const char_t* wquery,
       //NSL_ClearSearch();
       IndexSearcher* searcher = new IndexSearcher(wdir);
       std::cerr << endl << " $$$$$ WSearchng  ... " << endl;
-      hits = &searcher->search(*q, const_cast<char_t*>(wgroupby));
+      hits = &searcher->search(*q, 0, const_cast<char_t*>(wgroupby));
       std::cerr << endl << " $$$$$$$$$ WSearch done. " << endl;
 
       //ret = 1;
@@ -441,7 +441,7 @@ NSLIBDLL_API int NSL_WDelete(const fchar_t* wdir,
     r = &IndexReader::open(wdir);
     s = new IndexSearcher(*r);
 
-    h = &s->search(*q, const_cast<char_t*>(_T("")));
+    h = &s->search(*q, 0, const_cast<char_t*>(_T("")));
     ret = 0;
     for ( int i=0;i<h->Length();i++ ){
       r->Delete(h->id(i));

@@ -27,20 +27,21 @@ HitDoc::~HitDoc(){
   delete doc;
 }
 
-Hits::Hits(Searcher& s, Query& q, const Filter* f, char_t* wgroupby):
+Hits::Hits(Searcher& s, Query& q, const Filter* f, int numResults, char_t* wgroupby):
   query(q),
   searcher(s),
   filter(f),
   wgroupby(wgroupby),
+  numResults(numResults),
   length(0),
   groupby_str(""),
   first(NULL),
   last(NULL),
   numDocs(0),
-  maxDocs(50000)
+  maxDocs(1000000)
 {
   hitDocs.setDoDelete(NSLib::util::DELETE_TYPE_DELETE);
-  getMoreDocs(25000);          // retrieve 100 initially
+  getMoreDocs(500000);          // retrieve 100 initially
 }
 
 Hits::~Hits(){
@@ -92,10 +93,12 @@ void Hits::getMoreDocs(const int Min){
     min = hitDocs.size();
 
   int n = min * 2;          // double # retrieved
-  TopDocs& topDocs = searcher.Search(query, filter, n, wgroupby);
+  TopDocs& topDocs = searcher.Search(query, filter, n, numResults, wgroupby);
   length = topDocs.totalHits;
   groupby_str = topDocs.groupby_str;
   ScoreDoc** scoreDocs = topDocs.scoreDocs;
+  if (scoreDocs == NULL) return;
+
   int scoreDocsLength = topDocs.scoreDocsLength;
 
   float scoreNorm = 1.0f;
