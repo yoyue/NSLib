@@ -39,17 +39,16 @@ Hits::Hits(Searcher& s, Query& q, const Filter* f, int numResults, char_t* wgrou
   first(NULL),
   last(NULL),
   numDocs(0),
-  maxDocs(100000)
+  maxDocs(1000000)
 {
   hitDocs.setDoDelete(NSLib::util::DELETE_TYPE_DELETE);
 
   int minDocs = maxDocs / 2;
-  //cerr << " 0-maxDocs : "<< maxDocs << " minDocs : "<< minDocs << " numResults: " << numResults << endl;
+  
   if (ws2str(wgroupby).empty() && numResults != 0)
     minDocs = std::min(minDocs, numResults);
-  maxDocs = minDocs * 2;
 
-  //cerr << " 1-Min : "<< minDocs << endl;
+  maxDocs = minDocs * 2;
 
   getMoreDocs((const int)minDocs);          // retrieve 100 initially
 }
@@ -103,31 +102,27 @@ void Hits::getMoreDocs(const int Min){
     min = hitDocs.size();
 
   int n = min * 2;          // double # retrieved
- // cerr << "Min : "<< Min << " , n : " << n <<endl;
+
+  // if (ws2str(wgroupby).empty() && numResults != 0)
+  //   n = std::min(n, numResults);
+
   TopDocs& topDocs = searcher.Search(query, filter, n, numResults, wgroupby);
 
-  // cerr << "M0 : ";
   length = topDocs.totalHits;
-  // cerr << "M00 : ";
   groupby_str = topDocs.groupby_str;
- //  cerr << "M01: ";
   ScoreDoc** scoreDocs = topDocs.scoreDocs;
   // if (scoreDocs == NULL) return;
-//   cerr << "Mi : " ;
   int scoreDocsLength = topDocs.scoreDocsLength;
 
   float scoreNorm = 1.0f;
   if (length > 0 && scoreDocs[0]->score > 1.0f)
     scoreNorm = 1.0f / scoreDocs[0]->score;
 
-  // cerr << "Mi2 : " ;
   int end = scoreDocsLength < length ? scoreDocsLength : length;
   for (int i = hitDocs.size(); i < end; i++)
     hitDocs.push_back(new HitDoc(scoreDocs[i]->score*scoreNorm, scoreDocs[i]->doc));
     
-  // cerr << "Mi3 : " ;
   delete &topDocs;
-  // cerr << "Mi4 : " << endl;
 }
 
 HitDoc& Hits::getHitDoc(const int n){

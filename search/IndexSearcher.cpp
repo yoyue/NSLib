@@ -127,14 +127,14 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
     scoreDocs = new ScoreDoc*[0];
   else {
 
-    scoreDocs = new ScoreDoc*[scoreDocsLength];
     bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > nDocs);
-    if(isContinue && scoreDocsLength > numResults && numResults != 0)
+    if (isContinue && scoreDocsLength > numResults && numResults != 0)
       scoreDocsLength = numResults;
 
     cerr << " IndexSearcher::search got " << totalHitsInt << " results" << endl; 
     //cerr << " 0-nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
 
+    scoreDocs = new ScoreDoc*[scoreDocsLength];
     //bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > scoreDocsLength);
     typedef std::map<std::string, int> GroupbyMap;
     GroupbyMap groupby;
