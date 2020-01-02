@@ -10,6 +10,7 @@
 #include "document/Document.h"
 #include "TopDocs.h"
 #include "util/VoidList.h"
+// #include <iostream>
 
 using namespace NSLib::index;
 namespace NSLib{ namespace search{
@@ -171,10 +172,23 @@ public:
       return false;
   }
   static Scorer* scorer(Query& query, Searcher& searcher, IndexReader& reader){
+    // cerr << "[prepare]";
     query.prepare(reader);
+    // cerr << "{[sumOfSquaredWeights]";
     float sum = query.sumOfSquaredWeights(searcher);
-    float norm = 1.0f / (float)sqrt(sum);
+    // cerr << "[Sum=" << sum << "]";
+    // cerr << "[sumOfSquaredWeights]Ed";
+    float norm = 1.0f ;
+    if(sum !=0 ) norm= 1.0f / (float)sqrt(sum);
+
+    // if(sum==0){
+    //    cerr << " nsum=0 ";
+    // }
+    // else
+    //   norm= 1.0f / (float)sqrt(sum);
+    // cerr << "{[normalize]";
     query.normalize(norm);
+    // cerr << "[normalize]Ed";
     return query.scorer(reader);
   }
 

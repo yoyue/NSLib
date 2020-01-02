@@ -3,7 +3,7 @@
 
 namespace NSLib{ namespace analysis {
   ChineseAnalyzer::ChineseAnalyzer() {
-    StopFilter::fillStopTable( stopTable, const_cast<char_t**>(STOP_WORDS),STOP_WORDS_LENGTH );
+    StopFilter::fillStopTable(stopTable, const_cast<char_t**>(STOP_WORDS), STOP_WORDS_LENGTH);
   }
 
   TokenStream& ChineseAnalyzer::tokenStream(const char_t* fieldName, BasicReader* reader) 

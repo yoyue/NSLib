@@ -11,7 +11,7 @@ namespace NSLib{ namespace analysis {
   class ChineseAnalyzer : public Analyzer 
   {
   private:
-    VoidMap< char_t*, char_t*> stopTable;
+    VoidMap<char_t*, char_t*> stopTable;
   public:
     ChineseAnalyzer();
     TokenStream& tokenStream(const char_t* fieldName, BasicReader* reader);

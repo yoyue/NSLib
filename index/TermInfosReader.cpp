@@ -9,7 +9,7 @@
 #include "TermInfo.h"
 #include "TermInfosWriter.h"
 #include "util/Arrays.h"
-#include <iostream>
+// #include <iostream>
 
 namespace NSLib{ namespace index {
 
@@ -45,7 +45,7 @@ void TermInfosReader::close() {
         _DELETE(_enum);
     }
 
-  for ( int i=0;i<indexTermsLength;i++ ){
+  for ( int i = 0; i < indexTermsLength; i++ ){
     indexTerms[i]->finalize();
     delete indexInfos[i];
   }
@@ -83,31 +83,52 @@ Term* TermInfosReader::get(const int position) {
 
 TermInfo* TermInfosReader::get(const Term& term){
   //cerr << "  TermInfosReader::get " << size << endl;
-  if (size == 0) return NULL;
-  
+  if (size == 0) {
+    // cerr << "[size=0]";
+    return NULL;
+  }
+
   LOCK_MUTEX(getTerm_LOCK);
   
+  // cerr << "[Tg]";
   // optimize sequential access: first try scanning cached _enum w/o seeking
   if ( _enum->getTerm(false) != NULL        // term is at or past current
       && ((_enum->prev != NULL && term.compareTo(*_enum->prev) > 0)
           || term.compareTo(*_enum->getTerm(false)) >= 0)) 
   { 
+    // cerr << "Tg0 ";
+  // cerr << "[epos:"<<_enum->position<<",itr:"<<NSLIB_WRITER_INDEX_INTERVAL<<"]";
     int _enumOffset = (_enum->position/NSLIB_WRITER_INDEX_INTERVAL)+1;
+    // cerr << "[oft:" << _enumOffset <<",len:"<<indexTermsLength<<"]";
     if (indexTermsLength == _enumOffset    // but before end of block
-        || term.compareTo(*indexTerms[_enumOffset]) < 0)
+        || (indexTermsLength > _enumOffset && term.compareTo(*indexTerms[_enumOffset]) < 0) )
     {
+      // cerr << "Tg00 ";
       TermInfo* ret = scanEnum(term);        // no need to seek
+      // cerr << "[seekEm00-ed]";
+      // cerr << "[TifR:get]Ed2";
       UNLOCK_MUTEX(getTerm_LOCK);
       //cerr << "  TermInfosReader::get " << _enumOffset << " " 
       //     << indexTermsLength << " " << ret->docFreq << endl;
+      // cerr << "[Tg00]Ed";
       return ret;
     }
   }
       
+  // cerr << "Tg1 ";
   // random-access: must seek
-  seekEnum(getIndexOffset(term));
+  int iof = getIndexOffset(term);
+  // cerr <<"[iof:";
+  // cerr <<iof<<"]";
+
+  seekEnum(iof);
+
+  // cerr << "[seekEm1-ed]";
+
   TermInfo* ret = scanEnum(term);
     
+  // cerr << "[Tg1]Ed";
+  // cerr << "[TifR:get]Ed";
   UNLOCK_MUTEX(getTerm_LOCK);
   return ret;
 }
@@ -123,7 +144,7 @@ int TermInfosReader::getPosition(const Term& term) {
 
   while(term.compareTo(*_enum->getTerm(false)) > 0 && _enum->next()) {}
 
-      UNLOCK_MUTEX(getPosition_LOCK);
+  UNLOCK_MUTEX(getPosition_LOCK);
   if (term.compareTo(*_enum->getTerm(false)) == 0)
     return _enum->position;
   else
@@ -131,7 +152,8 @@ int TermInfosReader::getPosition(const Term& term) {
 }
 
 SegmentTermEnum& TermInfosReader::getTerms(){
-    LOCK_MUTEX(getTerms_LOCK);
+  LOCK_MUTEX(getTerms_LOCK);
+
   if (_enum->position != -1)        // if not at start
     seekEnum(0);          // reset to start
     
@@ -142,12 +164,16 @@ SegmentTermEnum& TermInfosReader::getTerms(){
   return *cln;
 }
 
-SegmentTermEnum& TermInfosReader::getTerms(const Term& term) {
-    LOCK_MUTEX(getTermsTerm_LOCK);
+SegmentTermEnum& TermInfosReader::getTerms(const Term& term) {  
+  LOCK_MUTEX(getTermsTerm_LOCK);
+  // cerr << "[TifR:GT]";
   get(term);            // seek _enum to term
+
+  // cerr << "[TifR:GT]E";
 
   SegmentTermEnum* cln = _enum->clone();
     
+  // cerr << "d";
   UNLOCK_MUTEX(getTermsTerm_LOCK);
   return *cln;
 }
@@ -166,7 +192,7 @@ void TermInfosReader::readIndex() {
     indexPointers = new long_t[indexTermsLength];
 
     //cerr << "   TermInfosReader::readIndex tii " << indexTermsLength << endl;
-    for (int i = 0; indexEnum.next(); i++) {
+    for (int i = 0; i < indexTermsLength && indexEnum.next(); i++) {
       indexTerms[i] = indexEnum.getTerm();
       indexInfos[i] = indexEnum.getTermInfo();
       indexPointers[i] = indexEnum.indexPointer;
@@ -178,9 +204,11 @@ void TermInfosReader::readIndex() {
 int TermInfosReader::getIndexOffset(const Term& term)  {
   int lo = 0;            // binary search indexTerms[]
   int hi = indexTermsLength - 1;
-
+  
+  if(hi < 0) return 0;
   while (hi >= lo) {
     int mid = (lo + hi) >> 1;
+    if(indexTermsLength <= mid) return indexTermsLength - 1;
     int delta = term.compareTo(*indexTerms[mid]);
     if (delta < 0)
       hi = mid - 1;
@@ -201,8 +229,10 @@ void TermInfosReader::seekEnum(const int indexOffset) {
 
 TermInfo* TermInfosReader::scanEnum(const Term& term) {
   //std::cerr << " TermInfosReader::scanEnum: " << ws2str(term.Field()) << endl;
+  // cerr << "[se]";
   while ( term.compareTo(*_enum->getTerm(false) ) > 0 && _enum->next()) {}
 
+  // cerr << "se0";
   if (_enum->getTerm(false) != NULL && term.compareTo(*_enum->getTerm(false)) == 0)
     return _enum->getTermInfo();
   else

@@ -4,7 +4,7 @@
 #include "index/Term.h"
 #include "SearchHeader.h"
 
-
+// #include <iostream>
 using namespace std;
 namespace NSLib{ namespace search {
 	
@@ -50,12 +50,14 @@ float Similarity::tf(const float freq) {
 //static 
 float Similarity::idf(const NSLib::index::Term& term, const Searcher& searcher) {
 	// Use maxDoc() instead of numDocs() because its proportional to docFreq(),
-	// i.e., when one is inaccurate, so is the other, and in the same way.
+	// i.e., when one is inaccurate, so is the other, and in the same way.  
+	// cerr << "[idf-docFreq:"<<searcher.docFreq(term)<<",smaxDoc"<<searcher.maxDoc()<<"]";
 	return idf(searcher.docFreq(term), searcher.maxDoc());
 }
 
 //static 
 float Similarity::idf(const int docFreq, const int numDocs){
+	// if(docFreq==-1) cerr << " df=-1 ";
 	return (float)(floatLog(numDocs/(float)(docFreq+1)) + 1.0);
 }
 	

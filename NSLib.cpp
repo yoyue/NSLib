@@ -231,7 +231,7 @@ NSLIBDLL_API void* NSL_WSearch(const fchar_t* wdir, const char_t* wquery,
     QueryParser qp(wfield,analyzer);
     q = &qp.Parse(wquery);
   }catch(exception e){
-    cerr << endl << "################ parsing error." << e.what() << endl;
+    cerr << endl << "################ parsing error1." << e.what() << endl;
     reportError( e.what());
   }catch(...){
     reportError( "Unknown error");

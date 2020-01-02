@@ -8,12 +8,12 @@
 #include "TopDocs.h"
 #include "search/SearchHeader.h"
 
-//#include <iostream>
 using namespace NSLib::document;
 using namespace NSLib::util;
 using namespace NSLib::index;
 
-namespace NSLib{ namespace search {
+namespace NSLib {
+namespace search {
 
 HitDoc::HitDoc(const float s, const int i):
   next(NULL),
@@ -24,7 +24,7 @@ HitDoc::HitDoc(const float s, const int i):
 {
 }
 
-HitDoc::~HitDoc(){
+HitDoc::~HitDoc() {
   delete doc;
 }
 
@@ -44,7 +44,7 @@ Hits::Hits(Searcher& s, Query& q, const Filter* f, int numResults, char_t* wgrou
   hitDocs.setDoDelete(NSLib::util::DELETE_TYPE_DELETE);
 
   int minDocs = maxDocs / 2;
-  
+
   if (ws2str(wgroupby).empty() && numResults != 0)
     minDocs = std::min(minDocs, numResults);
 
@@ -53,7 +53,7 @@ Hits::Hits(Searcher& s, Query& q, const Filter* f, int numResults, char_t* wgrou
   getMoreDocs((const int)minDocs);          // retrieve 100 initially
 }
 
-Hits::~Hits(){
+Hits::~Hits() {
   //delete &query;
   //delete &searcher;
   //searcher.close();
@@ -68,9 +68,8 @@ const char* Hits::GroupbyResult() const
   return groupby_str.c_str();
 }
 
-Document& Hits::doc(const int n){
+Document& Hits::doc(const int n) {
   HitDoc& hitDoc = getHitDoc(n);
-
   // Update LRU cache of documents
   remove(hitDoc);          // remove from list, if there
   addToFront(hitDoc);          // add to front of list
@@ -84,19 +83,19 @@ Document& Hits::doc(const int n){
 
   if (hitDoc.doc == NULL)
     hitDoc.doc = &searcher.doc(hitDoc.id);    // cache miss: read document
-          
+
   return *hitDoc.doc;
 }
-    
-int Hits::id (const int n){
+
+int Hits::id (const int n) {
   return getHitDoc(n).id;
 }
 
-float Hits::score(const int n){
+float Hits::score(const int n) {
   return getHitDoc(n).score;
 }
 
-void Hits::getMoreDocs(const int Min){
+void Hits::getMoreDocs(const int Min) {
   int min = Min;
   if ((int)hitDocs.size() > min)
     min = hitDocs.size();
@@ -105,10 +104,9 @@ void Hits::getMoreDocs(const int Min){
 
   // if (ws2str(wgroupby).empty() && numResults != 0)
   //   n = std::min(n, numResults);
-
   TopDocs& topDocs = searcher.Search(query, filter, n, numResults, wgroupby);
-
   length = topDocs.totalHits;
+
   groupby_str = topDocs.groupby_str;
   ScoreDoc** scoreDocs = topDocs.scoreDocs;
   // if (scoreDocs == NULL) return;
@@ -120,20 +118,19 @@ void Hits::getMoreDocs(const int Min){
 
   int end = scoreDocsLength < length ? scoreDocsLength : length;
   for (int i = hitDocs.size(); i < end; i++)
-    hitDocs.push_back(new HitDoc(scoreDocs[i]->score*scoreNorm, scoreDocs[i]->doc));
-    
+    hitDocs.push_back(new HitDoc(scoreDocs[i]->score * scoreNorm, scoreDocs[i]->doc));
   delete &topDocs;
 }
 
-HitDoc& Hits::getHitDoc(const int n){
-  if (n >= length){
+HitDoc& Hits::getHitDoc(const int n) {
+  if (n >= length) {
     char_t buf[100];
     stringPrintF(buf, _T("Not a valid hit number: %d"), n);
     _THROWX( buf );
   }
+
   if (n >= (int)hitDocs.size())
     getMoreDocs(n);
-
   return *((HitDoc*)(hitDocs.at(n)));
 }
 
@@ -144,7 +141,7 @@ void Hits::addToFront(HitDoc& hitDoc)
     last = &hitDoc;
   else
     first->prev = &hitDoc;
-      
+
   hitDoc.next = first;
   first = &hitDoc;
   hitDoc.prev = NULL;
@@ -153,7 +150,7 @@ void Hits::addToFront(HitDoc& hitDoc)
 }
 
 void Hits::remove(HitDoc& hitDoc)
-{    // remove from cache
+{ // remove from cache
   if (hitDoc.doc == NULL)  // it's not in the list
     return;            // abort
 
@@ -161,7 +158,7 @@ void Hits::remove(HitDoc& hitDoc)
     last = hitDoc.prev;
   else
     hitDoc.next->prev = hitDoc.prev;
-      
+
   if (hitDoc.prev == NULL)
     first = hitDoc.next;
   else
@@ -170,4 +167,5 @@ void Hits::remove(HitDoc& hitDoc)
   numDocs--;
 }
 
-}}
+}
+}

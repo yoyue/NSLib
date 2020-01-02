@@ -1,6 +1,7 @@
 #include "StdHeader.h"
 #include "WildcardQuery.h"
 
+#include <iostream>
 using namespace NSLib::index;
 namespace NSLib{ namespace search {
 
@@ -18,9 +19,10 @@ namespace NSLib{ namespace search {
 	}
 
     void WildcardQuery::prepare(IndexReader& reader) {
-        try {
+        try {cerr << "[WcQ::prepare]";
 			FilteredTermEnum* w = new WildcardTermEnum(reader, wildcardTerm);
 			MultiTermQuery::setEnum( w );
+			cerr << "[WcQ::prepare]Ed ";
         } catch (...) {
 			printf( "Prepare error\n" );
 		}

@@ -41,13 +41,13 @@ namespace NSLib{ namespace analysis {
       char_t ch = rd.GetNext();
       
       // For skipping whitespaces
-      if( isSpace((char_t)ch)!=0 )
+      if( isSpace((char_t)ch) != 0 )
       {
         continue;
       }
 
       // Read for Alpha-Nums
-      if( isAlNum((char_t)ch)!=0 )
+      if( isAlNum((char_t)ch) != 0 )
       {
         start = rd.Column();
         return ReadAlphaNum(ch);
@@ -69,13 +69,13 @@ namespace NSLib{ namespace analysis {
     str.append(prev);
 
     char_t ch = prev;
-    while(!rd.Eos() && isSpace((char_t)ch)==0 )
+    while(!rd.Eos() && isSpace((char_t)ch) == 0 )
     {
       ch = rd.GetNext();
 
-      if(isAlNum((char_t)ch)!=0)
+      if (isAlNum((char_t)ch) != 0)
       {
-        if( isDigit(ch)!=0)
+        if( isDigit(ch) != 0)
           prevHasDigit = true;
 
         str.append( ch );
@@ -109,12 +109,12 @@ namespace NSLib{ namespace analysis {
   {
     str.append( ch );
 
-    while( isSpace((char_t)rd.Peek())==0 && isAlNum((char_t)rd.Peek())!=0 || rd.Peek() == '\'')
+    while( isSpace((char_t)rd.Peek()) == 0 && isAlNum((char_t)rd.Peek()) != 0 || rd.Peek() == '\'')
     {
       str.append( rd.GetNext() );
     }
 
-    if(rd.Peek() == '\'')
+    if (rd.Peek() == '\'')
       str.len--;
     return new Token(str.getBuffer(), start, rd.Column(), tokenImage[APOSTROPHE]);
   }
@@ -126,13 +126,13 @@ namespace NSLib{ namespace analysis {
     bool append = true;
 
     char_t ch = prev;
-    while(!rd.Eos() && isSpace((char_t)ch)==0)
+    while(!rd.Eos() && isSpace((char_t)ch) == 0)
     {
       ch = rd.GetNext();
 
-      if( isAlNum((char_t)ch)!=0 && append)
+      if (isAlNum((char_t)ch) != 0 && append)
         val.append( ch );
-      else if(ch == '.' && val.length() > 0){
+      else if (ch == '.' && val.length() > 0){
         val.prepend(_T("@"));
         val.prepend(str);
         return ReadEmail(val, ch);
@@ -140,7 +140,7 @@ namespace NSLib{ namespace analysis {
         append = false;
     }
 
-    if(val.length() > 0){
+    if (val.length() > 0){
       val.prepend(_T("@"));
       val.prepend(str);
       return new Token(val.getBuffer(), start, rd.Column(), tokenImage[COMPANY]);
@@ -156,17 +156,17 @@ namespace NSLib{ namespace analysis {
     StringBuffer val(_T(""));
     char_t ch = prev;
 
-    while(!rd.Eos() && isSpace((char_t)ch)==0)
+    while(!rd.Eos() && isSpace((char_t)ch) == 0)
     {
       ch = rd.GetNext();
 
-      if( isAlNum((char_t)ch)!=0 && append)
+      if( isAlNum((char_t)ch) != 0 && append)
         val.append( ch);
       else
         append = false;
     }
 
-    if(val.length() > 0){
+    if (val.length() > 0){
       val.prepend(_T("&"));
       val.prepend(str);
       return new Token(val.getBuffer(), start, rd.Column(), tokenImage[COMPANY]);
@@ -179,12 +179,12 @@ namespace NSLib{ namespace analysis {
   {
     str.append(ch);
 
-    while(isSpace((char_t)rd.Peek())==0 && isAlNum((char_t)rd.Peek())!=0 || rd.Peek() == '.')
+    while(isSpace((char_t)rd.Peek()) == 0 && isAlNum((char_t)rd.Peek()) != 0 || rd.Peek() == '.')
     {
       str.append(rd.GetNext());
     }
 
-    if(rd.Peek() == '.')
+    if (rd.Peek() == '.')
       str.len--;
 
     return new Token(str.getBuffer(), start, rd.Column(), tokenImage[EMAIL]);
@@ -200,18 +200,18 @@ namespace NSLib{ namespace analysis {
     bool append = true;
     bool hasDigit = false;
 
-    if(ch != '.') {
+    if (ch != '.') {
       maybeHost = false;
       maybeAcronym = false;
     }
 
-    while(!rd.Eos() && isSpace((char_t)ch)==0)
+    while(!rd.Eos() && isSpace((char_t)ch) == 0)
     {
       ch = rd.GetNext();
 
-      if( Misc::isLetter(ch)!=0 )//&& append)
+      if( Misc::isLetter(ch) != 0 )//&& append)
         str.append( ch );
-      else if( isDigit(ch)!=0 && append) {
+      else if( isDigit(ch) != 0 && append) {
         // acronyms can't contain numbers
         maybeAcronym = false;
 
@@ -219,8 +219,8 @@ namespace NSLib{ namespace analysis {
         hasDigit = true;
 
         val.append( ch );
-      } else if(ch == '_' || ch == '-' || ch == '/' || ch == ',' || ch == '.' && append) {
-        if(ch != '.') {
+      } else if (ch == '_' || ch == '-' || ch == '/' || ch == ',' || ch == '.' && append) {
+        if (ch != '.') {
           maybeHost = false;
           maybeAcronym = false;
         }
@@ -240,13 +240,13 @@ namespace NSLib{ namespace analysis {
         append = false;
     } // end of while
 
-    if(maybeAcronym && val.length() == 0){
+    if (maybeAcronym && val.length() == 0){
       val.prepend(str.getBuffer());
       return new Token(val.getBuffer(), start, rd.Column(), tokenImage[ACRONYM]);
-    }else if(maybeHost){
+    }else if (maybeHost){
       val.prepend(str.getBuffer());
       return new Token(val.getBuffer(), start, rd.Column(), tokenImage[HOST]);
-    }else if(maybeNumber){
+    }else if (maybeNumber){
       val.prepend(str.getBuffer());
       return new Token(val.getBuffer(), start, rd.Column(), tokenImage[NUM]);
     }else {

@@ -73,11 +73,14 @@ static std::map<std::string, long long> global_file_length;
     struct mutex{
       int locked;
       mutex(){
-        locked=0;
+        locked = 0;
       }
     };
+
+
     #define DEFINE_MUTEX mutex
-    #define LOCK_MUTEX(x) while ( x.locked != 0 );x.locked = 1 //wait till unlocked, then lock
+   // #define LOCK_MUTEX(x) while ( x.locked != 0 ); x.locked = 1; //wait till unlocked, then lock //https://www.jianshu.com/p/a5c98230a93d
+    #define LOCK_MUTEX(x) while (TestAndSet(&x.locked, 1) != 0); //x.locked = 1; 
     #ifdef _DEBUG
       #define UNLOCK_MUTEX(x) if ( x.locked == 1 ) x.locked = 0; else _THROWC( "Mutex wasn't locked")
     #else
@@ -100,10 +103,10 @@ static std::map<std::string, long long> global_file_length;
 #define StringArrayConst NSLib::util::VoidList<const char_t*>
 #define StringArrayIterator vector<const char_t*>::const_iterator
 #define StringArrayConstIterator vector<const char_t*>::iterator
-#define _DELETE(x) delete x; x=NULL;
+#define _DELETE(x) delete x; x = NULL;
 
 std::string ws2str(const char16_t* src);
-
+int TestAndSet(int *ptr, int newx);
 //for pre-compiled header in msvc
 #include "util/Misc.h"
 #include "store/InputStream.h"

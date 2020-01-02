@@ -37,7 +37,7 @@ private:
     if (k <= size && lessThan(heap[k], heap[j]))
       j = k;
     
-    while (j <= size && lessThan(heap[j],node)) {
+    while (j <= size && lessThan(heap[j], node)) {
       heap[i] = heap[j];        // shift up child
       i = j;
       j = i << 1;
@@ -51,7 +51,7 @@ private:
 protected:
   // Determines the ordering of objects in this priority queue.  Subclasses
   //  must define this one method. 
-  virtual bool lessThan(_type a, _type b)=0;
+  virtual bool lessThan(_type a, _type b) = 0;
 
   // Subclass constructors must call this. 
   void initialize(const int maxSize, bool deleteOnClear){
@@ -92,7 +92,8 @@ public:
       size--;
       downHeap();          // adjust heap
       return result;
-    } else
+    } 
+    else
       return NULL;
   }
 
@@ -114,7 +115,7 @@ public:
   // Removes all entries from the PriorityQueue. 
   void clear(){
     for (int i = 0; i < size; i++)
-      if ( dk )
+      if (dk)
         delete heap[i];
     size = 0;
   }

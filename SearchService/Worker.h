@@ -40,33 +40,31 @@ public:
 public:
   Worker(string indexPath);
   virtual ~Worker() { fprintf(stderr, "Exiting"); }
-  
+
   static string getTimeString() {
     char tmp[100];
     time_t rawtime;
     struct tm* tminfo;
     struct timeval st;
     time(&rawtime);
-    tminfo = localtime (&rawtime);
+    tminfo = localtime(&rawtime);
     gettimeofday(&st, NULL);
     sprintf(tmp, "%d-%d-%d %d:%d:%d.%03d ",
-          1900+tminfo->tm_year, 1+tminfo->tm_mon, tminfo->tm_mday,
-          tminfo->tm_hour, tminfo->tm_min, tminfo->tm_sec, (int)(st.tv_usec/1000));
+            1900 + tminfo->tm_year, 1 + tminfo->tm_mon, tminfo->tm_mday,
+            tminfo->tm_hour, tminfo->tm_min, tminfo->tm_sec, (int)(st.tv_usec / 1000));
     string timeStr = tmp;
 
     return timeStr;
   }
-  
+
   void search();
   void search(Headers header, request_ptr request_ptr, tcp::connection_ptr tcp_conn);
   void searchInDatabase(string database, Query* query,
-             u16string wgroupby, WStringVec& showFields, int numResults);
+                        u16string wgroupby, WStringVec& showFields, int numResults);
 
   string m_indexBase;
   map<string, IndexSearcher*> searcherMap;
-  map<string, string> resultMap;
-  map<string, int> totalMap;
-  map<string, string> groupMap;
+  map<string, StringVec> resultMap;
 
   queue<Job> jobQueue;
   mutex queueMutex;
@@ -80,6 +78,10 @@ private:
 
   queue<Job> queryQueue;
   thread* searchThread;
+
+  map<string, int> totalMap;
+  map<string, string> groupMap;
+
 };
 
 } // namespace UBCService

@@ -39,7 +39,7 @@ struct UrlKeyValuePair{
   { 
     pion::ihash_multimap& params = http_request->get_queries();
     pion::ihash_multimap::const_iterator param = params.find(key);
-    if(param == params.end() || param->second.empty())
+    if (param == params.end() || param->second.empty())
       present = false;
     else {
       present = true;
@@ -75,7 +75,7 @@ struct Headers
     size_t base64_output_length;
     char* base64_output = Base64::decode(query.c_str(), query.length(), 
                                          base64_output_length);
-    if (base64_output_length==0 || base64_output==NULL) {
+    if (base64_output_length == 0 || base64_output == NULL) {
       delete base64_output;
       databases.clear();
       return;
@@ -90,11 +90,11 @@ struct Headers
     //                                         base64_output);
     unsigned char* l = (unsigned char*)base64_output;
 
-    int len = (((l[0]-'0')*10 + l[2]-'0')*10 + l[4]-'0')*10 + l[6]-'0';
+    int len = (((l[0] - '0') * 10 + l[2] - '0') * 10 + l[4] - '0') * 10 + l[6] - '0';
     unsigned char* f = l + sizeof(wchar_t16) * 4;
     
     l = f + len * sizeof(wchar_t16);
-    len = (((l[0]-'0')*10 + l[2]-'0')*10 + l[4]-'0')*10 + l[6]-'0';
+    len = (((l[0] - '0') * 10 + l[2] - '0') * 10 + l[4] - '0') * 10 + l[6] - '0';
     *l = '\0';
     searchQuery = (wchar_t16*)f;
     char* str = NSL_wideToChar((wchar_t16*)f);
@@ -104,7 +104,7 @@ struct Headers
     
     f = l + sizeof(wchar_t16) * 4;    
     l = f + len * sizeof(wchar_t16);
-    len = (((l[0]-'0')*10 + l[2]-'0')*10 + l[4]-'0')*10 + l[6]-'0';
+    len = (((l[0] - '0') * 10 + l[2] - '0') * 10 + l[4] - '0') * 10 + l[6] - '0';
     *l = '\0';
     field = (wchar_t16*)f;
     str = NSL_wideToChar((wchar_t16*)f);
@@ -114,7 +114,7 @@ struct Headers
     
     f = l + sizeof(wchar_t16) * 4;    
     l = f + len * sizeof(wchar_t16);
-    len = (((l[0]-'0')*10 + l[2]-'0')*10 + l[4]-'0')*10 + l[6]-'0';
+    len = (((l[0] - '0') * 10 + l[2] - '0') * 10 + l[4] - '0') * 10 + l[6] - '0';
     *l = '\0';
     showfield = (wchar_t16*)f;
     str = NSL_wideToChar((wchar_t16*)f);
@@ -123,11 +123,11 @@ struct Headers
     //showfield = convert_u16string( (wchar_t16*)f, len);
 
     f = l + sizeof(wchar_t16) * 4;
-    if (len>0) {
-      wchar_t16* buf = new wchar_t16[len+1];
+    if (len > 0) {
+      wchar_t16* buf = new wchar_t16[len + 1];
       memcpy(buf, f, len*sizeof(wchar_t16));
-      buf[len]=0;
-      groupby= (wchar_t16*)buf;
+      buf[len] = 0;
+      groupby = (wchar_t16*)buf;
       str = NSL_wideToChar((wchar_t16*)f);
       cerr << " groupby is " << str << std::endl;
       delete str;
@@ -162,7 +162,7 @@ public:
 	        showFields.push_back(showfield.substr(start));
 	      break;
       } else {
-	      showFields.push_back(showfield.substr(start, pos-start));
+	      showFields.push_back(showfield.substr(start, pos - start));
         start = pos + 1; 
       }
     }
@@ -194,7 +194,7 @@ private:
   {
     std::u16string ret;
     char16_t wch;
-    for (int i=0; i<len; i++) {
+    for (int i = 0; i < len; i++) {
       wch = f[i];
       ret += wch;
     }
@@ -221,7 +221,7 @@ private:
     // to get the actual originating IP address
     string xForwardedFor(http_request->
                            get_header(HTTPTypes::HEADER_X_FORWARDED_FOR));
-    if (! xForwardedFor.empty()) {
+    if (!xForwardedFor.empty()) {
       vector<string> forwardsVec;
       boost::split(forwardsVec, xForwardedFor, is_any_of(","), token_compress_on);
       

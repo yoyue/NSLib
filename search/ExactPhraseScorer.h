@@ -10,6 +10,7 @@ namespace NSLib{ namespace search{
     class ExactPhraseScorer: public PhraseScorer {
     public:
     ExactPhraseScorer(TermPositions** tps, int tpsLength, l_byte_t* n, float w);
+    ~ExactPhraseScorer();
 
     protected:
         float phraseFreq();

@@ -32,15 +32,15 @@ namespace NSLib{ namespace analysis {
 		const int textLength = stringLength(text);
 		const char_t* type = t->Type();
 
-		if ( stringCompare(type, tokenImage[APOSTROPHE])==0 && ( stringICompare(text+textLength-2, _T("'s"))==0  ) ) {
+		if (stringCompare(type, tokenImage[APOSTROPHE]) == 0 && (stringICompare(text + textLength - 2, _T("'s")) == 0)) {
 			// remove 's
 			char_t* buf = stringDuplicate(text);
-			buf[textLength-2]=0;
-			Token* ret = new Token( buf, t->StartOffset(), t->EndOffset(), type);
+			buf[textLength - 2] = 0;
+			Token* ret = new Token(buf, t->StartOffset(), t->EndOffset(), type);
 			delete[] buf;
 			return ret;
 
-		} else if ( stringCompare(type, tokenImage[ACRONYM])==0 ) {		  // remove dots
+		} else if (stringCompare(type, tokenImage[ACRONYM]) == 0) {		  // remove dots
 			StringBuffer trimmed;
 			for (int i = 0; i < textLength; i++) {
 				char_t c = text[i];

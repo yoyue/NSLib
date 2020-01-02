@@ -11,7 +11,7 @@ namespace NSLib{ namespace index {
 
 	SegmentTermEnum::SegmentTermEnum(InputStream& i, FieldInfos& fis, const bool isi):
 	    position(-1),
-	    term( new Term( _T(""),_T("") ,true) ),
+	    term( new Term( _T(""), _T(""), true) ),
 		input(i),
 		fieldInfos(fis),
 		isIndex(isi),
@@ -40,7 +40,7 @@ namespace NSLib{ namespace index {
 		size( clone.size ),
 		isClone(true)
 	{
-		NSLib::util::Arrays::arraycopy(clone.buffer,0,buffer,0,bufferLength);
+		NSLib::util::Arrays::arraycopy(clone.buffer, 0, buffer, 0, bufferLength);
 	}
 
 	SegmentTermEnum::~SegmentTermEnum(){
@@ -57,6 +57,7 @@ namespace NSLib{ namespace index {
 
 	bool SegmentTermEnum::next() {
 		if (position++ >= size-1) {
+			prev = term;
 			term->finalize();
 			term = NULL;
 			return false;
@@ -99,7 +100,7 @@ namespace NSLib{ namespace index {
 		uint totalLength = start + length;
 
 		//TODO: check this, not copying buffer every time.
-		if ( bufferLength < int(totalLength+1))
+		if ( bufferLength < int(totalLength + 1))
 			growBuffer(totalLength);
 	    
 		input.readChars(buffer, start, length);
@@ -110,9 +111,9 @@ namespace NSLib{ namespace index {
 
 	void SegmentTermEnum::growBuffer(const int length) {
 		delete[] buffer;
-		buffer = new char_t[length+1];
-		bufferLength = length+1;
-		stringCopy(buffer,term->Text());
+		buffer = new char_t[length + 1];
+		bufferLength = length + 1;
+		stringCopy(buffer, term->Text());
 	}
 
 
@@ -149,6 +150,19 @@ namespace NSLib{ namespace index {
 	SegmentTermEnum* SegmentTermEnum::clone() {
 		//TODO: check this
 		return new SegmentTermEnum(*this);
+ //    SegmentTermEnum* cloneEnum= new SegmentTermEnum();
+ //    cloneEnum->position = position;
+ //    cloneEnum->term = term;
+ //    cloneEnum->input = input;
+ //    cloneEnum->fieldInfos = fieldInfos;
+ //    cloneEnum->isIndex = isIndex;
+ //    cloneEnum->termInfo = termInfo;
+ //    cloneEnum->size = size;
+ //    cloneEnum->buffer = buffer;
+ //    cloneEnum->bufferLength = bufferLength;
+ //    cloneEnum->isClone = isClone;
+
+	// return cloneEnum;
 	}
 
 }}

@@ -2,6 +2,7 @@
 #ifndef _NSLib_search_BooleanClause_
 #define _NSLib_search_BooleanClause_
 
+// #include <iostream>
 #include "SearchHeader.h"
 namespace NSLib{ namespace search {
 // A clause in a BooleanQuery. 
@@ -30,6 +31,7 @@ public:
   {
   }
   ~BooleanClause(){
+    // cerr << "[delete clause]" ;
     if ( deleteQuery )
       delete &query;
   }

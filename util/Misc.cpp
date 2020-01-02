@@ -19,24 +19,24 @@ namespace NSLib{ namespace util{
   //static 
   char* Misc::wideToChar(const wchar16_t* s){
     int len = strlen16(s);
-    char* msg=new char[len+1];
-    wideToChar( s,msg,len+1 );
+    char* msg = new char[len + 1];
+    wideToChar(s, msg, len + 1);
     return msg;
   }
 
   wchar16_t* Misc::charToWide(const char* s){
     int len = strlen(s);
-    wchar16_t* msg = new wchar16_t[len+1];
-    charToWide(s,msg,len+1);
+    wchar16_t* msg = new wchar16_t[len + 1];
+    charToWide(s, msg, len + 1);
     return msg;
   }
   
   void Misc::wideToChar(const wchar16_t* s, char* d, size_t len){
-    for ( int i=0; i<(int)len && i<strlen16(s)+1;i++ )
-      d[i] = ((unsigned int)s[i]>0x80?'?':(char)s[i]);
+    for (int i = 0; i < (int)len && i < strlen16(s) + 1; i++)
+      d[i] = ((unsigned int)s[i] > 0x80 ? '?' : (char)s[i]);
   }
   void Misc::charToWide(const char* s, wchar16_t* d, size_t len){
-    for (int i=0; i<(int)len && i<(int)strlen(s)+1; i++ )
+    for (int i = 0; i < (int)len && i < (int)strlen(s) + 1; i++ )
       d[i] = (char_t)s[i];
   }
 
@@ -53,8 +53,8 @@ namespace NSLib{ namespace util{
       {248,255}
     };
 
-    for ( int i=0;i<8;i++ ){
-      if ( ranges[i][1]== 0 && ranges[i][0] == c )
+    for ( int i = 0; i < 8; i++ ){
+      if (ranges[i][1] == 0 && ranges[i][0] == c)
         return true;
       else if ( c >= ranges[i][0] && c <= ranges[i][1] )
         return true;
@@ -160,5 +160,14 @@ namespace NSLib{ namespace util{
 
     return (false);
   }
+
+
+// int64_t Misc::unsignedShift(int64_t num, int64_t shift) {
+//     return (shift & 0x3f) == 0 ? num : (((uint64_t)num >> 1) & 0x7fffffffffffffffLL) >> ((shift & 0x3f) - 1);
+// }
+
+int Misc::unsignedShift(uint num, int shift) {
+    return (shift & 0x1f) == 0 ? num : ((num >> 1) & 0x7fffffff) >> ((shift & 0x1f) - 1);
+}
 
 }}

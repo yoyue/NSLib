@@ -14,8 +14,12 @@ ExactPhraseScorer::ExactPhraseScorer(TermPositions** tps, int tpsLength,
 }
 
 
+ExactPhraseScorer::~ExactPhraseScorer() {
+}
+
 float ExactPhraseScorer::phraseFreq(){
   // sort list with pq
+  pq.clear();
   for (PhrasePositions* pp = first; pp != NULL; pp = pp->next) {
     pp->firstPosition();
     pq.put(pp);				  // build pq from list
@@ -31,7 +35,7 @@ float ExactPhraseScorer::phraseFreq(){
       } while (first->position < last->position);
       firstToLast();
     }
-    freq++;					  // all equal: a match
+    ++freq;					  // all equal: a match
   } while (last->nextPosition());
       
   return (float)freq;

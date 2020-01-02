@@ -21,10 +21,11 @@ using namespace NSLib::index;
 using namespace NSLib::util;
 using namespace NSLib::document;
 
-namespace NSLib{ namespace search {
-  
-SimpleTopDocsCollector::SimpleTopDocsCollector(const BitSet* bs, HitQueue& hitQueue, 
-                         int* totalhits,const int ndocs, const float minScore):
+namespace NSLib {
+namespace search {
+
+SimpleTopDocsCollector::SimpleTopDocsCollector(const BitSet* bs, HitQueue& hitQueue,
+    int* totalhits, const int ndocs, const float minScore):
   bits(bs),
   hq(hitQueue),
   nDocs(ndocs),
@@ -34,28 +35,40 @@ SimpleTopDocsCollector::SimpleTopDocsCollector(const BitSet* bs, HitQueue& hitQu
 }
 
 void SimpleTopDocsCollector::collect(const int doc, const float score) {
+  // cerr << "[InS::collect " << ",doc:" <<doc <<",socre:"<<score <<"]";
   if (score > 0.0f &&        // ignore zeroed buckets
-    (bits==NULL || bits->get(doc))) 
-  {    // skip docs not in bits
+      (bits == NULL || bits->get(doc)))
+  { // skip docs not in bits
     totalHits[0]++;
     if (score >= ms) {
+      // cerr << "[hsize=" << totalHits[0] <<"]";
       hq.put(new ScoreDoc(doc, score));    // update hit queue
+      // cerr << "[put]";
       if (hq.Size() > nDocs) {      // if hit queue overfull
+        // cerr <<" [pop] ";
         delete hq.pop();        // remove lowest in hit queue
         minScore = hq.top()->score; // reset minScore
       }
     }
   }
+  // else{
+  //   if(bits!=NULL){
+  //     cerr << "[bits!=NULL]";
+  //    if(!bits->get(doc)) cerr <<" bits->get(doc)==NULL ";
+  // }
+  //   cerr << " [fdoc:"<<doc<<"]";
+  // }
+  // cerr << "[hq.Size()="<<hq.Size()<<"]";
 }
-  
-SimpleFilteredCollector::SimpleFilteredCollector(BitSet* bs, HitCollector& collector): 
+
+SimpleFilteredCollector::SimpleFilteredCollector(BitSet* bs, HitCollector& collector):
   bits(bs),
   results(collector)
 {
 }
 
 void SimpleFilteredCollector::collect(const int doc, const float score) {
-  cerr<< score << " " << bits << " collector::collect " << endl;
+  // cerr<< score << " " << bits << " collector::collect " << endl;
   if (bits->get(doc)) {      // skip docs not in bits
     results.collect(doc, score);
   }
@@ -68,7 +81,7 @@ IndexSearcher::IndexSearcher(const fchar_t* path):
   readerOwner(true)
 {
 }
-      
+
 /** Creates a searcher searching the provided index. */
 IndexSearcher::IndexSearcher(IndexReader& r):
   reader(r),
@@ -76,18 +89,18 @@ IndexSearcher::IndexSearcher(IndexReader& r):
 {
 }
 
-IndexSearcher::~IndexSearcher(){
+IndexSearcher::~IndexSearcher() {
 }
-      
+
 /** Frees resources associated with this Searcher. */
-void IndexSearcher::close(){
-  if ( readerOwner ){
+void IndexSearcher::close() {
+  if ( readerOwner ) {
     reader.close();
     delete &reader;
   }
 }
 
-int IndexSearcher::docFreq(const Term& term) const{
+int IndexSearcher::docFreq(const Term& term) const {
   return reader.docFreq(term);
 }
 
@@ -103,36 +116,46 @@ int IndexSearcher::maxDoc() const {
 TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
                                const int nDocs, const int numResults, char_t* wgroupby)
 {
-  cerr << "IndexSearcher::Search nDocs: " << nDocs << endl;//bDics Hits.maxDocs(50000)
+  // cerr << " IndexSearcher::Search nDocs: " << nDocs << endl;
 
   Scorer* scorer = Query::scorer(query, *this, reader);
   if (scorer == NULL)
     return *new TopDocs(0, new ScoreDoc*[0], 0, "");
 
   const BitSet* bits = filter != NULL ? filter->bits(reader) : NULL;
+  // if(filter!=NULL)
+  // {
+  //   cerr << "[BitSet:len=" << reader.MaxDoc() <<"];";
+  // }
+  // else
+  //   cerr << "[bits=NULL]";
+
   HitQueue& hq = *new HitQueue(nDocs);
   int* totalHits = new int[1];
   totalHits[0] = 0;
-    
+
   SimpleTopDocsCollector hitCol(bits, hq, totalHits, nDocs, 0.0f);
+  // cerr << " S1 " ;
   scorer->score(hitCol, reader.MaxDoc());
+  // cerr << " S2 " ;
+
   int scoreDocsLength = hq.Size();
   //int scoreDocsLength =std::min(hq.Size(), nDocs);
-  
-  string groupby_str;  
+  // cerr << "[scoreLen:"<<scoreDocsLength << ", thit:"<<totalHits[0]<<"]";
+  string groupby_str;
   int totalHitsInt = totalHits[0];
 
   ScoreDoc** scoreDocs = NULL;
-  if (scoreDocsLength == 0)
+  if (scoreDocsLength == 0) {
     scoreDocs = new ScoreDoc*[0];
+  }
   else {
-
     bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > nDocs);
+
     if (isContinue && scoreDocsLength > numResults && numResults != 0)
       scoreDocsLength = numResults;
 
-    cerr << " IndexSearcher::search got " << totalHitsInt << " results" << endl; 
-    //cerr << " 0-nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
+    cerr << "  IndexSearcher::search got " << totalHitsInt << " results" << endl;
 
     scoreDocs = new ScoreDoc*[scoreDocsLength];
     //bool isContinue = (ws2str(wgroupby).empty() || totalHitsInt > scoreDocsLength);
@@ -140,14 +163,15 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
     GroupbyMap groupby;
     for (int i = 0; i < scoreDocsLength; i++) {  // put docs in array
       scoreDocs[i] = hq.pop();
+
       if (isContinue) continue;
 
       Field* field = NULL;
       Document& doc = reader.document(scoreDocs[i]->doc);
-     
+
       if (doc.getField(wgroupby, field)) {
         // const char_t* v = field->StringValue();
-        // char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");      
+        // char* value = NSL_wideToChar(v);   //char* value = NSLib::util::CharConverter::wideToChar(v, "English");
         // string iv = static_cast<string>(value);
         string iv = ws2str(field->StringValue());
         for (auto c : iv) {
@@ -159,14 +183,14 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
         auto ret = groupby.insert({iv, 1});
         if (!ret.second)
           ++ret.first->second;
-        
+
         //delete[] value;
       }
-      delete &doc;    
+      delete &doc;
     }
- 
-    // cerr << " nDocs: " << nDocs  << " count: " << count << " totalHitsInt: " << totalHits[0]<< endl; 
-    for (GroupbyMap::iterator it = groupby.begin(); it!=groupby.end(); ++it) {
+
+    // cerr << " nDocs: " << nDocs  << " totalHitsInt: " << totalHits[0]<< endl;
+    for (GroupbyMap::const_iterator it = groupby.cbegin(); it != groupby.cend(); ++it) {
       //"1928": "39", "1929": "56"
       groupby_str += groupby_str.size() != 0 ? "," : "";
       // char tmp[1024];
@@ -174,22 +198,23 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
       // groupby_str += tmp;
       groupby_str += "\"" + it->first + "\":\"" + to_string(it->second) + "\"";
     }
-    cerr << " nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
+    // cerr << "  nDocs: " << nDocs << " totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: " << scoreDocsLength << endl;
   }
 
- // cerr << "aac  groupby_str: " << groupby_str << endl;
-  // cerr << " aac1 totalHitsInt: "<< totalHitsInt << "；scoreDocsLength: "  << scoreDocsLength << endl; 
-
   while (hq.Size() != 0)
-    hq.pop();
-
+    delete hq.pop();
+  // // if (hq.Size() != 0)
   delete &hq;
 
   if (bits != NULL)
     delete bits;
 
   delete[] totalHits;
-  delete scorer;
+
+  // cerr << " S9 " ;
+  if (scorer != NULL)
+    delete scorer;
+  // cerr << " S11 " ;
   return *new TopDocs(totalHitsInt, scoreDocs, scoreDocsLength, groupby_str);
 }
 /*
@@ -205,7 +230,7 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   HitQueue& hq = *new HitQueue(nDocs);
   int* totalHits = new int[1];
   totalHits[0] = 0;
-    
+
 
   SimpleTopDocsCollector hitCol(bits, hq, totalHits, nDocs, 0.0f);
   scorer->score( hitCol, reader.MaxDoc());
@@ -217,12 +242,12 @@ TopDocs& IndexSearcher::Search(Query& query, const Filter* filter,
   typedef std::map<std::string, int> GroupbyMap;
   GroupbyMap groupby;
 
-  
+
   for (int i = hq.Size()-1; i >= 0; i--) {  // put docs in array
     scoreDocs[i] = hq.pop();
   }
 
-  string groupby_str;  
+  string groupby_str;
   int totalHitsInt = totalHits[0];
   delete &hq;
   delete bits;
@@ -253,13 +278,13 @@ void IndexSearcher::Search(Query& query, const Filter* filter, HitCollector& res
   HitCollector& collector = results;
   if (filter != NULL) {
     bs = filter->bits(reader);
-    SimpleFilteredCollector fc(bs,results);
+    SimpleFilteredCollector fc(bs, results);
     collector = fc;
   }
 
   Scorer* scorer = Query::scorer(query, *this, reader);
-  if (scorer == NULL){
-    delete bs;    
+  if (scorer == NULL) {
+    delete bs;
     return;
   }
 
@@ -267,4 +292,5 @@ void IndexSearcher::Search(Query& query, const Filter* filter, HitCollector& res
   delete bs;
 }
 
-}}
+}
+}

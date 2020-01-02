@@ -5,12 +5,14 @@
 #include "SegmentInfo.h"
 #include "util/BitVector.h"
 #include "util/VoidMap.h"
+// #include "util/Misc.h"
 #include "Term.h"
 #include "FieldInfos.h"
 #include "FieldsReader.h"
 #include "IndexReader.h"
 #include "TermInfosReader.h"
 
+using namespace NSLib::util;
 namespace NSLib{ namespace index{
 
 class SegmentTermDocs: public TermDocs 

@@ -2,10 +2,12 @@
 #include "SegmentHeader.h"
 
 #include "util/BitVector.h"
+// #include "util/Misc.h"
 #include "Term.h"
 
-#include <iostream>
+// #include <iostream>
 
+using namespace NSLib::util;
 namespace NSLib{ namespace index {
 
 SegmentTermDocs::SegmentTermDocs(void* Parent):
@@ -17,6 +19,7 @@ SegmentTermDocs::SegmentTermDocs(void* Parent):
   freqStream ( &((SegmentReader*)parent)->freqStream->clone())
   //freqStream ( ((SegmentReader*)parent)->freqStream)
 {
+   this->deletedDocs = ((SegmentReader*)parent)->deletedDocs;
   //freqStream->seek(0); 
 }
 
@@ -39,6 +42,7 @@ void SegmentTermDocs::seek(const TermInfo* ti) {
     doc = 0;
     freqStream->seek(ti->freqPointer);
   }
+  // cerr << "[freqCount=" << freqCount << "]";
 }
   
 void SegmentTermDocs::close() {
@@ -75,26 +79,27 @@ bool SegmentTermDocs::next() {
 int SegmentTermDocs::read(int docs[], int freqs[]) {
   int end = sizeof(docs)/sizeof(int);
   int i = 0;
-  //cerr << "SegmentTermDocs::read: " << end << " " << freqCount << endl;
   while (i < end && freqCount > 0) {
     // manually inlined call to next() for speed
     int sdocCode = freqStream->readVInt();
     uint docCode = sdocCode;
+    // doc += Misc::unsignedShift(docCode, 1); // shift off low bit
     doc += docCode >> 1;        // shift off low bit TODO: check this... was >>>
     if ((docCode & 1) != 0)        // if low bit is set
       freq = 1;          // freq is one
     else
       freq = freqStream->readVInt();      // else read freq
+
     freqCount--;
      
     if (deletedDocs == NULL || !deletedDocs->get(doc)) {
       docs[i] = doc;
       freqs[i] = freq;
       ++i;
-    }
-    //cerr << "\tSegmentTermDocs::read: " << sdocCode << " " << freqCount << " " 
-    //     <<deletedDocs << " " << doc << " " << i << " " << freqs[i] << endl;
+    }    
   }
+  // if(i >= end)
+  //   return end - 1;
   return i;
 }
 

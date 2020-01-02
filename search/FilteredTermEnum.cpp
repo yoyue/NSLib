@@ -10,8 +10,8 @@ namespace NSLib{ namespace search {
         
         // Find the first term that matches
         Term* term = actualEnum->getTerm();
-        if ( termCompare(term) ){ 
-            currentTerm->finalize();
+        if (term && termCompare(term)){ 
+            // currentTerm->finalize();
             currentTerm = term->pointer();
         }
         else next();
@@ -46,7 +46,6 @@ namespace NSLib{ namespace search {
             if (actualEnum->next()) {
                 Term* term = actualEnum->getTerm();
                 if (termCompare(term)) {
-                    currentTerm->finalize();
                     currentTerm = term->pointer();
                     return true;
                 }
@@ -70,7 +69,9 @@ namespace NSLib{ namespace search {
     
     /** Closes the enumeration to further activity, freeing resources.  */
     void FilteredTermEnum::close(){
-        actualEnum->close();
+        if (actualEnum)
+          actualEnum->close();
+     
         currentTerm->finalize();
         
         currentTerm = NULL;

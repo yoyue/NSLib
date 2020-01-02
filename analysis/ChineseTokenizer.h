@@ -34,7 +34,7 @@ namespace NSLib{ namespace analysis {
 #ifdef _UNICODE
     char_t m_buf[100];
 #else
-    char    m_buf[200];
+    char m_buf[200];
 #endif
   public:
     // Construct filtering <i>in</i>. 

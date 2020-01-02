@@ -129,12 +129,12 @@ namespace NSLib{ namespace store{
     //if pointer is less than buffersize, and bigger than 0
     //remainder will be greater than 0 after first loop,
     //so it will try and read bufferNumber 1.
-    int remainder = len - (pointer<NSLIB_STREAM_BUFFER_SIZE?pointer:0);
+    int remainder = len - (pointer < NSLIB_STREAM_BUFFER_SIZE ? pointer : 0);
     int start = pointer;
     int destOffset = idestOffset;
     while (remainder != 0) {
-      int bufferNumber = start/NSLIB_STREAM_BUFFER_SIZE;
-      int bufferOffset = start%NSLIB_STREAM_BUFFER_SIZE;
+      int bufferNumber = start / NSLIB_STREAM_BUFFER_SIZE;
+      int bufferOffset = start % NSLIB_STREAM_BUFFER_SIZE;
       int bytesInBuffer = NSLIB_STREAM_BUFFER_SIZE - bufferOffset;
       int bytesToCopy = bytesInBuffer >= remainder ? remainder : bytesInBuffer;
       l_byte_t* buffer = file.buffers.at(bufferNumber);

@@ -9,11 +9,11 @@ class BitSet
 	int size;
 	bool *bits;
 public:
-	BitSet ( int _size ):
+	BitSet (int _size):
 		size(_size),
-		bits( new bool[_size] )
+		bits(new bool[_size])
 	{	
-		for ( int i=0;i<size;i++ )
+		for (int i = 0; i < size; i++)
 			bits[i] = false;
 	}
 	~BitSet(){
@@ -21,14 +21,15 @@ public:
 	}
 
 	bool get(const int bit) const{
-		if ( bit < 0 || bit > size-1 )
-		  _THROWC( "bit out of range" );
+		if ( bit < 0 || bit > size - 1 )
+			return false;
+		  // _THROWC("bit out of range");
 		return bits[bit];
 	}
 
   void set(const int bit){
-		if ( bit < 0 || bit > size-1 )
-			_THROWC( "bit out of range" );
+		if ( bit < 0 || bit > size - 1 )
+			_THROWC("bit out of range");
 		bits[bit] = true;
 	}
 };

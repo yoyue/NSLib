@@ -18,8 +18,8 @@ SegmentsTermDocs::SegmentsTermDocs(SegmentReader** r, int rLen, const int* s):
 	starts(s)
 {
 	//TODO: do we really need to do this?
-	for ( int i=0;i<rLen;i++)
-		segTermDocs[i]=NULL;
+	for ( int i = 0; i < rLen; i++)
+		segTermDocs[i] = NULL;
 }
 
 SegmentsTermDocs::~SegmentsTermDocs(){

@@ -16,6 +16,7 @@
 #include "ExactPhraseScorer.h"
 #include "SloppyPhraseScorer.h"
 
+#include <iostream>
 using namespace NSLib::index;
 using namespace NSLib::util;
 namespace NSLib{ namespace search{
@@ -48,16 +49,26 @@ namespace NSLib{ namespace search{
   }
 
   float PhraseQuery::sumOfSquaredWeights(Searcher& searcher) {
+    // cerr << "[PQ::sumOf]" ;
     for (uint i = 0; i < terms.size(); i++)    // sum term IDFs
-      idf += Similarity::idf(*terms.at(i), searcher);
+    {
+      Term* t=terms.at(i);
+      idf += Similarity::idf(*t, searcher);
+    }
 
     weight = idf * boost;
+    // cerr << "[PQ::sumOf]Ed " ;
     return weight * weight;        // square term weights
   }
 
   void PhraseQuery::normalize(const float norm) {
+    // cerr << "[PQ::normalize]" ;
     weight *= norm;          // normalize for query
     weight *= idf;          // factor from document
+    // cerr << "[PQ::normalize]Ed " ;
+  }
+  void PhraseQuery::prepare(IndexReader& reader){
+    // cerr << "[PQ::prepare]" ;
   }
 
   Scorer* PhraseQuery::scorer(IndexReader& reader)  {
@@ -81,9 +92,9 @@ namespace NSLib{ namespace search{
     }
 
     if (slop == 0)          // optimize exact case
-      return new ExactPhraseScorer(tps, tpsLength,reader.getNorms(field), weight);
+      return new ExactPhraseScorer(tps, tpsLength, reader.getNorms(field), weight);
     else
-      return new SloppyPhraseScorer(tps,tpsLength, slop, reader.getNorms(field), weight);
+      return new SloppyPhraseScorer(tps, tpsLength, slop, reader.getNorms(field), weight);
 
   }
 

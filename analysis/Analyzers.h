@@ -174,7 +174,7 @@ namespace NSLib{ namespace analysis {
   class LowerCaseFilter: public TokenFilter {
   public:
     LowerCaseFilter(TokenStream* in, bool deleteTokenStream)
-      : TokenFilter(in,deleteTokenStream) 
+      : TokenFilter(in, deleteTokenStream) 
     { }
     
     ~LowerCaseFilter(){
@@ -194,14 +194,14 @@ namespace NSLib{ namespace analysis {
   // Removes stop words from a token stream. 
   class StopFilter: public TokenFilter {
   private:
-    VoidMap< char_t*, char_t*>& table;
+    VoidMap<char_t*, char_t*>& table;
   public:
     // Constructs a filter which removes words from the input
     //  TokenStream that are named in the array of words. 
     StopFilter(TokenStream* in, bool deleteTokenStream, 
                char_t* stopWords[], int stopWordsLength)
       : TokenFilter(in, deleteTokenStream),
-        table(*new VoidMap< char_t*, char_t*>)
+        table(*new VoidMap<char_t*, char_t*>)
     {
       //TODO: table.setDoDelete(true,NSLib::util::DELETE_TYPE_DELETE);
       fillStopTable( table, stopWords, stopWordsLength);
@@ -212,7 +212,7 @@ namespace NSLib{ namespace analysis {
     // Constructs a filter which removes words from the input
     //  TokenStream that are named in the Hashtable.
     StopFilter(TokenStream* in, bool deleteTokenStream, 
-               VoidMap< char_t*, char_t*>& stopTable)
+               VoidMap<char_t*, char_t*>& stopTable)
       : TokenFilter(in, deleteTokenStream),
         table(stopTable)
     { } 
@@ -220,7 +220,7 @@ namespace NSLib{ namespace analysis {
     // Builds a Hashtable from an array of stop words, appropriate for passing
     //  into the StopFilter constructor.  This permits this table construction to
     //  be cached once when an Analyzer is constructed. 
-    static void fillStopTable(VoidMap< char_t*, char_t*>& stopTable,
+    static void fillStopTable(VoidMap<char_t*, char_t*>& stopTable,
                               char_t* stopWords[], int length)
     {
       for (int i = 0; i < length; i++)
@@ -245,7 +245,7 @@ namespace NSLib{ namespace analysis {
   
   
   
-    //An array containing some common English words that are usually not
+  //An array containing some common English words that are usually not
   //useful for searching.
   static const char_t* ENGLISH_STOP_WORDS [] = 
   {
@@ -259,7 +259,7 @@ namespace NSLib{ namespace analysis {
   
   // Filters LetterTokenizer with LowerCaseFilter and StopFilter. 
   class StopAnalyzer: public Analyzer {
-    VoidMap< char_t*, char_t*> stopTable;
+    VoidMap<char_t*, char_t*> stopTable;
     
   public:
     // Builds an analyzer which removes words in ENGLISH_STOP_WORDS. 
@@ -270,11 +270,11 @@ namespace NSLib{ namespace analysis {
         
     // Builds an analyzer which removes words in the provided array. 
     StopAnalyzer( char_t* stopWords[], int length) {
-      StopFilter::fillStopTable(stopTable,stopWords,length);
+      StopFilter::fillStopTable(stopTable, stopWords, length);
     }
     // Filters LowerCaseTokenizer with StopFilter. 
     TokenStream& tokenStream(const char_t* fieldName, BasicReader* reader) {
-      return *new StopFilter(new LowerCaseTokenizer(reader),true, stopTable);
+      return *new StopFilter(new LowerCaseTokenizer(reader), true, stopTable);
     }
   };
 

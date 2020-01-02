@@ -5,8 +5,7 @@
 #include "HitCollector.h"
 #include "Scorer.h"
 
-namespace NSLib{ namespace search{
-  
+namespace NSLib{ namespace search{  
 
 //predefine for use in BooleanScorer class NSLIB_EXPORT.
 class BucketTable;
@@ -40,10 +39,10 @@ private:
   SubScorer* scorers;
   BucketTable* bucketTable;
 
-  int maxCoord;
   int nextMask;
 
 public:
+  int maxCoord;
   int requiredMask;
   int prohibitedMask;
   float* coordFactors;
@@ -62,11 +61,12 @@ private:
   BooleanScorer& scorer;
 
 public:
-  const static int SIZE = 1 << 10;
+  const static int SIZE = 1 << 11;
   const static int MASK = SIZE - 1;
   Bucket buckets[SIZE];
 
   BucketTable(BooleanScorer& scr);
+
   void collectHits(HitCollector& results);
   int size() const;
   HitCollector& newCollector(const int mask);

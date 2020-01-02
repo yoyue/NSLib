@@ -66,4 +66,11 @@ libNSLib:	$(OBJS)
 clean:
 	rm -f *.o core 
 	rm $(LIB).a
+	rm -f ${NSLIB}/SearchService/*.o
+	rm -f $(Search)/*.o
+	rm -f $(Index)/*.o
+	rm -f $(QueryParser)/*.o
+	rm -f ${Analysis}/*.o
+	rm -f ${Util}/*.o
+	rm -f $(Store)/*.o
 

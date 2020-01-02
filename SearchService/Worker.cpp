@@ -42,37 +42,32 @@ namespace UBCService {
   void InitSearchThread(Worker* worker, string database)
   {
     worker->searcherMap[database] = new IndexSearcher((worker->m_indexBase + database).c_str());
-    /*worker->totalMap[database] = 0;
-    worker->resultMap[database] = "";
-    worker->groupMap[database] = "";*/
     cout << "Searcher " << database << " initialized." << endl;
   }
 
   Worker::Worker(std::string indexPath)
   {
     m_indexBase = "C:\\index\\";
-    if (indexPath.size() > 0)
+    if (indexPath.size() != 0)
       m_indexBase = indexPath;
     m_index = "SearchDB";
 
     prv_readDatabaseNames();
 
-    //ThreadVec pool;
-    for (StrVecIter it = databaseNames.begin(); it != databaseNames.end(); it++) {
+    ThreadVec pool;
+    for (vector<string>::const_iterator it = databaseNames.cbegin(); it != databaseNames.cend(); it++) {
       string database = *it;
       std::thread* t = new thread(InitSearchThread, this, database);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-      t->join();
-      delete t;
-
-      //pool.push_back(t);
+      pool.push_back(t);
     }
-    // for (int i = 0; i < (int)pool.size(); i++) {
-    //  thread *t = pool[i];
-    //  t->join();
-    //  delete t;
-    // }
+
+    for (auto t : pool) {
+     //thread *t = pool[i];
+     t->join();
+     delete t;
+    }
     searchThread = new thread(SearchThread, this);
   }
 
@@ -124,65 +119,84 @@ namespace UBCService {
       }
     }
     catch (std::exception e) {
-      cerr << endl << "################ parsing error." << e.what() << endl;
+      cerr << endl << "################ parsing error2." << e.what() << endl;
       cerr << "exception caught: " << e.what() << endl;
     }
     catch (...) {
       cerr << "exception caught: Unknown error" << endl;
     }
     int count = 0;
-    string result;
+    // string result;
     string groupStr;
+ 
     if (hits != NULL) {
       count = NSL_HitCount(hits);
+      printf(" %s >>>> found %d results ", database.c_str(), count);
       if (count != 0) {
         const char* groupby_str = NSL_HitGroupby(hits);
         groupStr = boost::str(boost::format(", \"group\":{%s}")
               % groupby_str);
         //printf( "     keywords: %s\n", keywords );
-        printf(" %s >>>> found %d results, groupby: %s\n",
-          database.c_str(), count, groupby_str);
+        printf(", groupby: %s\n", groupby_str);
 
-        result = ", \"result\":[";
-         
-        for (int i = 0; i < (std::min)(numResults, count); i++) {
-          
-          string record = (i == 0) ? "{" : ",{";
-          void* doc = NSL_Hit(hits, i);
-    
-          for (int j = 0; j < (int)showFields.size(); j++) {
-            if (j != 0) record += ",";
-            const char16_t* it = showFields[j].c_str();
-            char* showField = NSL_wideToChar(it);//it->c_str()
-            //printf( "%s: %ld\n", showField.c_str(), doc);
-            char16_t* val = NSL_WGet_Field(doc, it);//it->c_str()
-            if (val != NULL) {
-              std::u16string valStr = val;
-              int len = valStr.length() * sizeof(char16_t);
-              size_t base64_output_length;
-              char* base64_output = Base64::encode((const unsigned char*)val, len,
-                base64_output_length);
-              record += boost::str(boost::format(" \"%s\":\"%s\"")
-                % showField % base64_output);
-              NSL_WFree_Field(val);
-              delete[] base64_output;
+          // result = ", \"result\":[";
+  /*        
+          std::u16string u16 = (char16_t*)database.c_str();       
+          int lenDB = u16.length() * sizeof(char16_t);
+          size_t dboutlen;
+          char* dbout = Base64::encode((const unsigned char*)database.c_str(), lenDB, dboutlen);
+          */
+          //string pg = "Page";
+          for (int i = 0; i < (std::min)(numResults, count); i++) {
+      
+            string record = boost::str(boost::format(" {\"IndexName\":\"%s\"") % database.c_str());
+
+            // string record = (i == 0) ? "{"; : ",{";
+            void* doc = NSL_Hit(hits, i);
+      
+            bool isComma = true;
+            for (int j = 0; j < (int)showFields.size(); j++) {
+              if (isComma) record += ",";
+              const char16_t* it = showFields[j].c_str();
+              char* showField = NSL_wideToChar(it);//it->c_str()
+              //printf( "%s: %ld\n", showField.c_str(), doc);
+              char16_t* val = NSL_WGet_Field(doc, it);//it->c_str()
+              if (val != NULL) {
+                std::u16string valStr = val;
+                int len = valStr.length() * sizeof(char16_t);
+                size_t base64_output_length;
+                char* base64_output = Base64::encode((const unsigned char*)val, len,
+                  base64_output_length);
+                record += boost::str(boost::format(" \"%s\":\"%s\"")
+                  % showField % base64_output);
+                NSL_WFree_Field(val);
+                delete[] base64_output;
+                isComma = true;
+              }
+              else {
+                isComma = false;
+                // if (showField == pg.c_str()) 
+                //   isG = false;
+                //record += boost::str(boost::format(" \"%s\":\"\"") % showField);
+              }
+              delete[] showField;
             }
-            else {
-              record += boost::str(boost::format(" \"%s\":\"\"") % showField);
-            }
-            delete[] showField;
+            if (record[record.size() - 1] == ',')
+              record.erase(record.size() - 1);
+            record += "}";
+
+            resultMap[database].push_back(record);
+            // result += record;        
+
           }
-
-          record += "}";
-          result += record;
-        }
-
-        result += "]";
-      }
-      delete ((Hits*)hits);
+          // result += "]";
+        }     
+      delete ((Hits*)hits);      
     }
+    else 
+      cerr << " hitsY=NULL ;" ;
     totalMap[database] = count;
-    resultMap[database] = result;
+    // resultMap[database] = result;
     groupMap[database] = groupStr;
   }
 
@@ -228,8 +242,8 @@ namespace UBCService {
     int numResults = header.numResults;
 
     int qlen = wquery.length() * sizeof(char16_t);
-    string result = qlen == 0 ? "{}" : "{";
-
+    //string result = qlen == 0 ? "{}" : "{";
+    string result = "{ ";
     if (qlen != 0) {
       char* wq = (char*)wquery.c_str();
       for (int i = 0; i < qlen; i++)
@@ -237,58 +251,77 @@ namespace UBCService {
       cerr << endl;
       wprintf(L" query: %hs \n", wquery.c_str());
 
+      // cout << " query2: " << ws2str(const_cast<char_t*>(wquery.c_str())) << endl;
+
       ChineseAnalyzer analyzer;
       QueryParser qp(wfield.c_str(), analyzer);
       Query* query = &qp.Parse(wquery.c_str());
-
+      
       //string* results = new string[header.databaseVec.size()]; 
       ThreadVec pool;
+      // 、、int ts = 0;
       for (auto database : databases)
       {
         std::thread* t = new thread(searcherThread, this, database, query,
           wgroupby, header.showfield, numResults);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // ts += 100;
         pool.push_back(t);
-      }
-      /*for (StrVecIter it = databases.begin(); it != databases.end(); it++) {
-        string database = *it;
-
-        std::thread* t = new thread(searcherThread, this, database, query,
-          wgroupby, header.showfield, numResults);
-        pool.push_back(t);
-      }*/
+      }      
       std::this_thread::sleep_for(nanoseconds(1000));
-      int showTotal = 0;
+      // int showTotal = 0;
       bool isgroupby = !ws2str(const_cast<char_t*>(wgroupby.c_str())).empty();
       //bool isgroupby = !wgroupby.empty();
+
+      string recordStr = "";
+      int showTotal = 0;
       for (int i = 0; i < (int)pool.size(); i++) {
         thread *t = pool[i];
         t->join();
         delete t;
-        if (i != 0)
-          result += ", ";
 
         string dbName = databases[i];
         int count = totalMap[dbName];
 
-        result += boost::str(boost::format(" \"%s\": {\"count\":\"%d\"")
-          % dbName % count);
         if (count != 0) {
-          // if (!groupMap[dbName].empty())
-          //   result += boost::str(boost::format(", \"group\":{%s}")
-          //     % groupMap[dbName]);
+          result += boost::str(boost::format("\"%s\":{\"count\":\"%d\"")
+            % dbName % count);
+
           if (isgroupby)
             result += groupMap[dbName];
 
+          result += "}, ";
           if (showTotal < numResults) {
-            result += resultMap[dbName];
-            showTotal += count;
+            for (vector<string>::const_iterator it = resultMap[dbName].cbegin(); it != resultMap[dbName].cend(); ++it)
+            {
+              recordStr += *it + ",";
+              showTotal++;
+              if (showTotal == numResults)
+                break;
+            }
           }
+          resultMap[dbName].clear();
+
         }
-        result += "}";
+
       }
-      result += "}";
+
+      if (recordStr.size() != 0){
+        if (recordStr[recordStr.size() - 1] == ',')
+          recordStr.erase(recordStr.size() - 1);
+       
+        result += "\"results\":[" + recordStr + "]";
+      }
+
+      if (result[result.size() - 1] == ',')
+        result.erase(result.size() - 1);
+
       delete query;
     }
+
+    result += "}";
+
+
     cerr << getTimeString() << "writing results" << endl;
 
     // Set Content-type to "text/plain" (plain ascii text)

@@ -29,7 +29,7 @@ char* Base64::encode(const unsigned char *data, size_t input_len, size_t& output
   }
 
   int mod_table[] = {0, 2, 1};
-  for (int i = 0; i < mod_table[input_len% 3]; i++)
+  for (int i = 0; i < mod_table[input_len % 3]; i++)
     encoded_data[output_len- 1 - i] = '=';
   encoded_data[output_len] = '\0';
   return encoded_data;
@@ -41,18 +41,18 @@ char* Base64::decode(const char *data, size_t input_len, size_t& output_len)
   char decoding_table[256];
 
   for (int i = 0; i < 64; i++)
-    decoding_table[(unsigned char) encoding_table[i]] = i;
+    decoding_table[(unsigned char)encoding_table[i]] = i;
 
-  if (input_len% 4 != 0) return NULL;
+  if (input_len % 4 != 0) return NULL;
 
-  output_len= input_len/ 4 * 3;
-  if (data[input_len- 1] == '=') output_len--;
-  if (data[input_len- 2] == '=') output_len--;
+  output_len= input_len / 4 * 3;
+  if (data[input_len - 1] == '=') output_len--;
+  if (data[input_len - 2] == '=') output_len--;
 
   char *decoded_data = new char[output_len];
   if (decoded_data == NULL) return NULL;
 
-  for (int i = 0, j = 0; i < (int)input_len; i+=4) {
+  for (int i = 0, j = 0; i < (int)input_len; i += 4) {
 //    cerr << data[i] <<" " << data[i+1] << " " << data[i+2] << " " << data[i+3] 
 //         << uppercase << hex << (unsigned short)data[i+3] << "==>"; 
 /*
@@ -65,9 +65,9 @@ char* Base64::decode(const char *data, size_t input_len, size_t& output_len)
                     + (sextet_c << 1 * 6) + (sextet_d << 0 * 6);
 */
     unsigned int triple = 0;
-    for (size_t q= 0; q< 4; q++) {
+    for (size_t q = 0; q < 4; q++) {
       triple <<= 6;
-      char cursor = data[i+q] == ' ' ? '+' : data[i+q];
+      char cursor = data[i + q] == ' ' ? '+' : data[i + q];
       unsigned int sextet = cursor == '=' ? 0 : decoding_table[(int)cursor];
 //      cerr << uppercase << hex << sextet << " ";
       triple |= sextet;

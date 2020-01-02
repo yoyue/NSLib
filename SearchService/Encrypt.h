@@ -51,7 +51,7 @@ class Base64
       {
       case step_a:
         do {
-          if (codechar == code_in+length_in) {
+          if (codechar == code_in + length_in) {
             state_in->step = step_a;
             state_in->plainchar = *plainchar;
             return plainchar - plaintext_out;
@@ -61,7 +61,7 @@ class Base64
         *plainchar    = (fragment & 0x03f) << 2;
       case step_b:
         do {
-          if (codechar == code_in+length_in) {
+          if (codechar == code_in + length_in) {
             state_in->step = step_b;
             state_in->plainchar = *plainchar;
             return plainchar - plaintext_out;
@@ -72,7 +72,7 @@ class Base64
         *plainchar    = (fragment & 0x00f) << 4;
       case step_c:
         do {
-          if (codechar == code_in+length_in) {
+          if (codechar == code_in + length_in) {
             state_in->step = step_c;
             state_in->plainchar = *plainchar;
             return plainchar - plaintext_out;
@@ -83,7 +83,7 @@ class Base64
         *plainchar    = (fragment & 0x003) << 6;
       case step_d:
         do {
-          if (codechar == code_in+length_in) {
+          if (codechar == code_in + length_in) {
             state_in->step = step_d;
             state_in->plainchar = *plainchar;
           return plainchar - plaintext_out;

@@ -27,6 +27,13 @@ namespace NSLib{ namespace util{
     
     static void charToWide(const char* s, wchar16_t* d, size_t len);
     static void wideToChar(const wchar16_t* s, char* d, size_t len);
+
+    // /// Perform unsigned right-shift (left bits are zero filled)
+    // static int64_t unsignedShift(int64_t num, int64_t shift);
+
+    /// Perform unsigned right-shift (left bits are zero filled)
+    // static int32_t unsignedShift(int32_t num, int32_t shift);
+    static int unsignedShift(uint num, int shift);
   };
   
   template <class parent>class IGCollectable{

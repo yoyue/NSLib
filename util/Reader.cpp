@@ -25,8 +25,8 @@ namespace NSLib{namespace util{
   int FileReader::read(char_t* buf, const int start, const int length){
     int av = available();
     if ( av > 0 ){
-      for ( int i=0;i<length;i++ )
-        buf[i+start] = stream->readByte();
+      for (int i = 0; i < length; i++)
+        buf[i + start] = stream->readByte();
       //FSInputStream::readBytes((char_t*)buf,start,length);
       
       if ( av < length )
@@ -68,8 +68,7 @@ namespace NSLib{namespace util{
 
 
 
-
-  StringReader::StringReader ( const char_t* value ):
+  StringReader::StringReader (const char_t* value):
     data(value),
     delVal(false)
   {
@@ -77,7 +76,7 @@ namespace NSLib{namespace util{
     len = stringLength(value);    
   }
 
-  StringReader::StringReader ( const char_t* value, const int length, const bool deletevalue ):
+  StringReader::StringReader (const char_t* value, const int length, const bool deletevalue):
     data(value),
     len(length),
     delVal(deletevalue)
@@ -93,12 +92,12 @@ namespace NSLib{namespace util{
     return len-pt;
   }
 
-  int StringReader::read ( char_t* buf ){
+  int StringReader::read (char_t* buf){
     return read(buf,0,stringLength(buf));
   }
 
-  int StringReader::read ( char_t* buf, const int start, const int length ){
-    if ( pt >= len )
+  int StringReader::read (char_t* buf, const int start, const int length){
+    if (pt >= len)
       return -1;
     int rd = 0;
     while ( pt < len && rd < length ){
@@ -110,7 +109,7 @@ namespace NSLib{namespace util{
   }
 
   char_t StringReader::readChar(){
-    if ( pt>=len )
+    if (pt >= len)
       throw "String reader EOF";
 
     char_t ret = data[pt];
@@ -119,13 +118,13 @@ namespace NSLib{namespace util{
   }
 
   char_t StringReader::peek(){
-    if ( pt>=len ) //todo: check this, used to be pt+1>...
+    if (pt >= len) //todo: check this, used to be pt+1>...
       throw "String reader EOF";
     return data[pt]; //todo: check this, used to be data[pt+1]
   }
 
   void StringReader::close(){
-    if ( delVal )
+    if (delVal)
       delete[] data;
   }
 
@@ -134,7 +133,7 @@ namespace NSLib{namespace util{
   }
 
   void StringReader::seek(int position){
-    pt=position;
+    pt = position;
   }
 
 }}

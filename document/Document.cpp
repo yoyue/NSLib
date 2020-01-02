@@ -42,7 +42,7 @@ Document::Document():fieldList(NULL)
 { }
 
 Document::~Document(){
-  if ( fieldList!=NULL )
+  if (fieldList != NULL)
     delete fieldList;
 }
 
@@ -71,7 +71,7 @@ bool Document::getField(const char_t* name, Field*& retField) {
 //  method returns the last added such added. */
 const char_t* Document::get(const char_t* name) {
   Field *field = NULL;
-  if (getField(name,field))
+  if (getField(name, field))
     return field->StringValue();
   else
     return NULL;

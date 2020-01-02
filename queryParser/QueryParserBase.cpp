@@ -10,6 +10,7 @@
 #include "search/PhraseQuery.h"
 #include "search/RangeQuery.h"
 
+// #include <iostream>
 using namespace NSLib::search;
 using namespace NSLib::util;
 using namespace NSLib::analysis;
@@ -125,7 +126,7 @@ Query* QueryParserBase::GetRangeQuery(const char_t* field, Analyzer& analyzer, c
       
   Term* terms[2];
   Token* t;
-    
+  // cerr << "[queryText" << ws2str()<<",inclusive"<< inclusive <<"]";
   for (int i = 0; i < 2; i++) {
     try {
       t = source.next();

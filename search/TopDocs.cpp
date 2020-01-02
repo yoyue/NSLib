@@ -17,14 +17,14 @@ TopDocs::TopDocs(const int th, ScoreDoc **sds, const int sdLength,
 
 TopDocs::~TopDocs(){
 	if ( deleteScoreDocs ){
-		//for ( int i=0;i<scoreDocsLength;i++ )
-		for(int i=scoreDocsLength-1; i=0; i--)
+		for ( int i=0; i<scoreDocsLength; i++ )
 		{
-			if(scoreDocs[i]!=NULL)
+			if(scoreDocs[i] != NULL)
 				delete scoreDocs[i];
 		}
 	}
-	delete[] scoreDocs;
+	if(scoreDocs)
+		delete[] scoreDocs;
 }
 
 }}

@@ -9,6 +9,7 @@
 #include "util/StringBuffer.h"
 #include "index/Terms.h"
 
+// #include <iostream>
 using namespace NSLib::index;
 namespace NSLib{ namespace search {
 
@@ -19,6 +20,7 @@ namespace NSLib{ namespace search {
 		idf ( 0.0f ),
 		weight ( 0.0f )
 	{
+		// cerr << "[TQ::init]";
 	}
 	TermQuery::~TermQuery(){
 	    term->finalize();
@@ -29,14 +31,26 @@ namespace NSLib{ namespace search {
 	}
     
 	float TermQuery::sumOfSquaredWeights(Searcher& searcher){
+	    // cerr << " {TQ::sOfs ";	  
+	    // cerr<<"[f:"<<ws2str(term->Field())<<",t:" << ws2str(term->Text())<<"],";
 		idf = Similarity::idf(*term, searcher);
+		// cerr << "[idf:" << idf;
 		weight = idf * boost;
+		// cerr <<",boost:"<<boost<<"]";
+		// cerr << ",idf*boost:(" << idf << "*" << boost << ")=weight.";
+		// cerr << " TQ::sOfsEd} ";
 		return weight * weight;			  // square term weights
 	}
     
 	void TermQuery::normalize(const float norm) {
+		// cerr<<"{[TQ::normalize]";
+		// cerr <<"[nor:"<<norm<<",w:"<<weight<<",idf:"<<idf<<"]";
 		weight *= norm;				  // normalize for query
-		weight *= idf;				  // factor from document
+		weight *= idf;	
+		// cerr<<"[TQ::normalize]Ed";			  // factor from document
+	}
+	void TermQuery::prepare(IndexReader& reader){
+		// cerr << " TermQuery::pre ";
 	}
       
 	//added by search highlighter
@@ -46,10 +60,18 @@ namespace NSLib{ namespace search {
 	}
     
 	Scorer* TermQuery::scorer(IndexReader& reader){
-		TermDocs* termDocs = &reader.termDocs(term);
-		if (termDocs == NULL)
+		 // cerr << " {TQscorer ";
+		 // cerr << "[trem:";
+		 // cerr << ws2str(term->Field()) << ":";
+		 // cerr << ws2str(term->Text()) <<"]";
+		 
+		TermDocs* termDocs = &reader.termDocs(term);//IndexReader::termDocs
+		if (termDocs == NULL){
+			// cerr << "[termDocs=NULL]";
 			return NULL;
-        
+		}
+		// cerr <<"[weight=" << weight << "]";
+  //       cerr << " TQscorerEd}";
 		//Termscorer will delete termDocs when finished
 		return new TermScorer(*termDocs, reader.getNorms(term->Field()), weight);
 	}

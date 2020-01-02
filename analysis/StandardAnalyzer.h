@@ -13,8 +13,8 @@ using namespace NSLib::util;
 using namespace NSLib::analysis;
 
 namespace NSLib{ namespace analysis { 
-  //An array containing some common English words that are usually not
-  //useful for searching.
+  // An array containing some common English words that are usually not
+  // useful for searching.
   static const char_t* STOP_WORDS [] = 
   {
     _T("a"), _T("and"), _T("are"), _T("as"), _T("at"), _T("be"), _T("but"), _T("by"),
@@ -30,7 +30,7 @@ namespace NSLib{ namespace analysis {
   class StandardAnalyzer : public Analyzer 
   {
   private:
-    VoidMap< char_t*, char_t*> stopTable;
+    VoidMap<char_t*, char_t*> stopTable;
 
   public:
     // <summary> Builds an analyzer. </summary>

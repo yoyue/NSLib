@@ -21,8 +21,8 @@ public:
   Token(const char_t* text, const int start, const int end):
     startOffset (start),
     endOffset (end),
-    type ( _T("word") ),
-    termText( stringDuplicate(text) )
+    type (_T("word")),
+    termText(stringDuplicate(text))
   {
   }
 
@@ -34,9 +34,9 @@ public:
   Token(const char_t* text, const int start, const int end, const char_t* typ):
     startOffset (start),
     endOffset (end),
-    type ( typ ),
-    termText( stringDuplicate(text) )
-    //type (stringDuplicate(typ) ) //shouldn't need to duplicate type, already in tokenImage
+    type (typ),
+    termText(stringDuplicate(text))
+    //type (stringDuplicate(typ)) //shouldn't need to duplicate type, already in tokenImage
   {
   }
 
@@ -78,7 +78,7 @@ public:
   //  compatibility with older version.  Override to allow Analyzer to choose 
   //  strategy based on document and/or field.  Must be able to handle null
   //  field name for backward compatibility. 
-  virtual TokenStream& tokenStream(const char_t* fieldName, util::BasicReader* reader)=0;
+  virtual TokenStream& tokenStream(const char_t* fieldName, util::BasicReader* reader) = 0;
     
   virtual ~Analyzer(){ }
 };
@@ -110,7 +110,7 @@ protected:
   {
   }
   virtual ~TokenFilter(){
-    if ( deleteTokenStream )
+    if (deleteTokenStream)
       delete input;
   }
 

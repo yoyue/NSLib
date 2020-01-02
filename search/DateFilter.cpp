@@ -24,13 +24,13 @@ namespace NSLib{ namespace search{
 	/** Constructs a filter for field <code>f</code> matching times before
 		<code>time</code>. */
 	DateFilter* DateFilter::Before(const char_t* field, long_t time) {
-		return new DateFilter(field, 0,time);
+		return new DateFilter(field, 0, time);
 	}
 
 	/** Constructs a filter for field <code>f</code> matching times after
 		<code>time</code>. */
 	DateFilter* DateFilter::After(const char_t* field, long_t time) {
-		return new DateFilter(field,time, DateField::MAX_TIME );
+		return new DateFilter(field, time, DateField::MAX_TIME );
 	}
 
 	/** Returns a BitSet with true for documents which should be permitted in

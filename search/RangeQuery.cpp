@@ -11,7 +11,7 @@
 #include "index/IndexReader.h"
 #include "util/StringBuffer.h"
 
-
+// #include <iostream>
 using namespace NSLib::index;
 using namespace NSLib::util;
 namespace NSLib{ namespace search{
@@ -21,8 +21,11 @@ RangeQuery::RangeQuery(Term* LowerTerm, Term* UpperTerm, const bool Inclusive):
   query (NULL),
   reader(NULL)
 {
-  if (LowerTerm == NULL && UpperTerm == NULL)
+  // cerr << "[RQ:Init]";
+  if (LowerTerm == NULL && UpperTerm == NULL){
+    // cerr << "[At least one term must be non-NULL]";
     _THROWC( "At least one term must be non-NULL");
+  }
 
   if (LowerTerm != NULL)
     lowerTerm = LowerTerm->pointer();
@@ -30,12 +33,17 @@ RangeQuery::RangeQuery(Term* LowerTerm, Term* UpperTerm, const bool Inclusive):
     upperTerm = UpperTerm->pointer();
   
   if (LowerTerm != NULL && UpperTerm != NULL 
-      && stringCompare(lowerTerm->Field(), upperTerm->Field()) != 0 )
+      && stringCompare(lowerTerm->Field(), upperTerm->Field()) != 0 ){
+    // cerr << "[Both terms must be for the same field]";
     _THROWC( "Both terms must be for the same field" );
+
+  }
 }
+
 RangeQuery::~RangeQuery(){
   lowerTerm->finalize();
   upperTerm->finalize();
+  // cerr << "[~RQ]";
 }
 
 const char_t* RangeQuery::getQueryName() const{
@@ -44,40 +52,67 @@ const char_t* RangeQuery::getQueryName() const{
     
 void RangeQuery::prepare(IndexReader& reader)
 {
+  // cerr << "[RQ:prepare]" ;
   this->query = NULL;
   this->reader = &reader;
+  // cerr << "[RQ:prepare]Ed " ;
 }
     
 float RangeQuery::sumOfSquaredWeights(Searcher& searcher)
 {
+  // cerr << "[RQ:sumOfS" ;
+  // query = getQuery();
+  // if(query==NULL)
+  //   cerr<<" sofs-query==NULL";
+  // cerr <<"]";
   return getQuery()->sumOfSquaredWeights(searcher);
 }
     
 void RangeQuery::normalize(const float norm)
 {
+  // cerr << "[RQ:normalize norm:" << norm <<"," ;
+  // if(query==NULL)
+  //   cerr<<" normalize-query==NULL";
+  // cerr <<"]";
   getQuery()->normalize(norm);
 }
     
 Scorer* RangeQuery::scorer(IndexReader& reader)
 {
+  // cerr << "[RQ:scorer " ;
+  // if(query==NULL)
+  //   cerr<<" scorer-query==NULL";
+  // cerr <<"]";
   return getQuery()->scorer(reader);
 }
-    
+
 BooleanQuery* RangeQuery::getQuery()
 {
-  if (query != NULL)
+  // cerr << "[RQ:getQuery] " ;
+  if (query != NULL){
+    // cerr << "[query!=NULL] " ;
     return query;
+  } 
 
-  BooleanQuery* q = new BooleanQuery();
   // if we have a lowerTerm, start there. otherwise, start at beginning
-  if (lowerTerm == NULL) 
+  if (lowerTerm == NULL) {
+    // cerr << "[lowerTerm=NULL]";
     lowerTerm = new Term(getField(), _T(""));
-  TermEnum& _enum = reader->getTerms(lowerTerm);
+  }
+   
+  // cerr << "[reader] " ;
+  // cerr << "[ltf:"<<ws2str(lowerTerm->Field());
+  // cerr << ",lt:"<<ws2str(lowerTerm->Text())<<"]";
+
+  TermEnum& _enum = reader->getTerms(lowerTerm); //SegmentTermEnum& TermInfosReader::getTerms
+
+  // cerr << "[reader2] " ;
+  BooleanQuery* q = new BooleanQuery();
   _TRY {
     const char_t* lowerText = NULL;
-    //char_t* field;
+
     bool checkLower = false;
-                
+            
     if (!inclusive) { // make adjustments to set to exclusive
       if (lowerTerm != NULL) {
         lowerText = lowerTerm->Text();
@@ -89,13 +124,16 @@ BooleanQuery* RangeQuery::getQuery()
         upperTerm = uppEnum.getTerm();
       }
     }
-    const char_t* testField = getField();
+
+   const char_t* testField = getField();
+   //bool isAdd = false;
+   int st=0;
     do {
       Term* term = _enum.getTerm();
-      if (term == NULL || stringCompare(term->Field(), testField)!=0 )
+      if (term == NULL || stringCompare(term->Field(), testField) != 0 )
         break;
 
-      if (!checkLower || stringCompare(term->Text(),lowerText) > 0) {
+      if (!checkLower || stringCompare(term->Text(), lowerText) > 0) {
         checkLower = false;
         if (upperTerm != NULL) {
           int compare = upperTerm->compareTo( *term );
@@ -104,14 +142,19 @@ BooleanQuery* RangeQuery::getQuery()
           if ((compare < 0) || (!inclusive && compare == 0)) 
             break;
         }
+        //isAdd = true;
         TermQuery& tq = *new TermQuery(*term);	  // found a match
         tq.setBoost(boost);               // set the boost
-        q->add(tq,true, false, false);		// add to q
+        q->add(tq, true, false, false);		// add to q
+        // st++;
       }
     } while (_enum.next());
-  }_FINALLY ( _enum.close(); delete &_enum;);
-
+    // cerr <<" [st=" << st <<"]";
+  }
+  _FINALLY (_enum.close(););
+  // _FINALLY (_enum.close();delete &_enum;);
   query = q;
+  // cerr << "[RQ:getQuery]Ed " ;
   return query;
 }
 
@@ -119,9 +162,9 @@ BooleanQuery* RangeQuery::getQuery()
 const char_t* RangeQuery::toString(const char_t* field)
 {
   StringBuffer buffer;
-  if ( stringCompare(getField(),field)!=0 )
+  if (stringCompare(getField(), field) != 0 )
   {
-    buffer.append( getField() );
+    buffer.append(getField() );
     buffer.append( _T(":"));
   }
   buffer.append(inclusive ? _T("[") : _T("{"));
@@ -132,11 +175,10 @@ const char_t* RangeQuery::toString(const char_t* field)
   if (boost != 1.0f)
   {
     buffer.append( _T("^"));
-    buffer.append( boost,4 );
+    buffer.append( boost, 4 );
   }
   return buffer.ToString();
-}
-    
+}   
     
 const char_t* RangeQuery::getField()
 {

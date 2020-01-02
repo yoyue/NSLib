@@ -12,9 +12,9 @@ FSInputStream::FSInputStream(const fchar_t* path)
 {
   filePath = path;
   InputStreamMap::iterator it = global_input_stream_map.find(filePath);
-  if (it==global_input_stream_map.end()) {
-    fhandle  = openFile(path, O_BINARY | O_RANDOM | O_RDONLY, _S_IREAD );
-    if ( fhandle == -1  ) {
+  if (it == global_input_stream_map.end()) {
+    fhandle = openFile(path, O_BINARY | O_RANDOM | O_RDONLY, _S_IREAD );
+    if (fhandle == -1) {
       cerr << "File IO Open error " << path << " " << errno << endl;
       _THROWC( "File IO Open error");
     }
@@ -22,7 +22,7 @@ FSInputStream::FSInputStream(const fchar_t* path)
     global_file_length[filePath] = length;
     cerr << " FSInputStream opening " << path << " with " << length << " bytes" << endl;
 
-    l_byte_t* native_buffer = new l_byte_t[length+1];      // allocate buffer lazily
+    l_byte_t* native_buffer = new l_byte_t[length + 1];      // allocate buffer lazily
     _lseek(fhandle, 0, SEEK_SET);
     long l = _read(fhandle, native_buffer, length);
     _close(fhandle);
@@ -34,7 +34,7 @@ FSInputStream::FSInputStream(const fchar_t* path)
     cerr << " FSInputStream " << path << " with " << length << " bytes" << endl;
   }
   it = global_input_stream_map.find(filePath);
-  if (it==global_input_stream_map.end())
+  if (it == global_input_stream_map.end())
     cerr << "ERROR: missing " << filePath << " " << length << " bytes" << endl;
 }
 FSInputStream::FSInputStream(FSInputStream& clone):
@@ -60,11 +60,11 @@ void FSInputStream::close()  {
 /** InputStream methods */
 void FSInputStream::readInternal(l_byte_t* b, const int offset, const int len) {
   long_t position = getFilePointer();
-  int blen = (std::min)(int(length-position), len);
+  int blen = (std::min)(int(length - position), len);
   l_byte_t* native_buffer = global_input_stream_map[filePath];
   //cerr << "FSInputStream::readInternal " << filePath << " " << position << ", " << blen 
   //     << "(" << (long)native_buffer << ")" << (long)b << endl;
-  memcpy(b, native_buffer+position, blen);
+  memcpy(b, native_buffer + position, blen);
 }
 
 FSOutputStream::FSOutputStream(const fchar_t* path){
@@ -72,17 +72,17 @@ FSOutputStream::FSOutputStream(const fchar_t* path){
   //_O_CREAT - Creates and opens new file for writing. Has no effect if file specified by filename exists
   //_O_RANDOM - Specifies that caching is optimized for, but not restricted to, random access from disk. 
   //_O_WRONLY - Opens file for writing only; 
-  if ( util::Misc::dir_Exists(path) )
-    fhandle  = openFile( path, O_BINARY | O_RANDOM | O_RDWR, _S_IREAD | _S_IWRITE);
+  if (util::Misc::dir_Exists(path))
+    fhandle  = openFile(path, O_BINARY | O_RANDOM | O_RDWR, _S_IREAD | _S_IWRITE);
   else
-    fhandle  = openFile( path, O_BINARY | O_CREAT  | O_RANDOM | O_RDWR, _S_IREAD | _S_IWRITE);
+    fhandle  = openFile(path, O_BINARY | O_CREAT  | O_RANDOM | O_RDWR, _S_IREAD | _S_IWRITE);
 
-  if ( fhandle == -1 )
+  if (fhandle == -1)
     _THROWC( "File IO Open error");
 }
 
 FSOutputStream::~FSOutputStream(){
-  if ( fhandle != 0 ){
+  if (fhandle != 0){
     try{
       flush();
     }catch(...){
@@ -100,7 +100,7 @@ void FSOutputStream::close() {
     OutputStream::close();
   }catch(...){}
 
-  if ( _close(fhandle) != 0 )
+  if (_close(fhandle) != 0)
     _THROWC( "File IO Close error");
   else
     fhandle = 0;
@@ -109,7 +109,7 @@ void FSOutputStream::close() {
 /** Random-access methods */
 void FSOutputStream::seek(const long_t pos) {
   OutputStream::seek(pos);
-  if ( _lseek((long_t)fhandle,pos,SEEK_SET) != 0 )
+  if (_lseek((long_t)fhandle,pos,SEEK_SET) != 0)
     _THROWC( "File IO Seek error");
 }
 long_t FSOutputStream::Length(){
@@ -123,8 +123,8 @@ long_t FSOutputStream::Length(){
 
 FSDirectory::FSDirectory(const fchar_t* path, const bool createDir)
 {
-  fstringCopy(directory,path);
-  refCount=0;
+  fstringCopy(directory, path);
+  refCount = 0;
   if (createDir)
     create();
 
@@ -133,7 +133,7 @@ FSDirectory::FSDirectory(const fchar_t* path, const bool createDir)
     //char_t* wpath = util::CharConverter::charToWide(path, LANG_ENG);
 #else
     size_t len = strlen(path);
-    char_t* wpath = new char_t[len+1];
+    char_t* wpath = new char_t[len + 1];
     fstringCopy(wpath, path);
 #endif
 
@@ -143,15 +143,15 @@ FSDirectory::FSDirectory(const fchar_t* path, const bool createDir)
     StringBuffer e(_T(""));
     e.append(_T(" not a directory"));
     //delete[] wpath; 
-    _THROWX( e.getBuffer());
+    _THROWX(e.getBuffer());
 //*/
   }
 }
 
 void FSDirectory::create(){
   LOCK_MUTEX(FSDIR_CREATE);
-  if ( !util::Misc::dir_Exists(directory) )
-    if ( makeDirectory(directory) == -1 ){
+  if (!util::Misc::dir_Exists(directory))
+    if (makeDirectory(directory) == -1){
       StringBuffer e(_T("Cannot create directory: "));
       UNLOCK_MUTEX(FSDIR_CREATE);
       _THROWX( e.getBuffer() );
@@ -160,8 +160,8 @@ void FSDirectory::create(){
 #ifdef _WIN32
   DIR* dir = opendir(directory); 
   fchar_t path[MAX_PATH];
-  fstringCopy(path,directory);
-  fstringCat(path,PATH_DELIMITER);
+  fstringCopy(path, directory);
+  fstringCat(path, PATH_DELIMITER);
   fchar_t* pathP = path + fstringLength(path);
 #else
 #ifdef _F_UNICODE
@@ -169,14 +169,14 @@ void FSDirectory::create(){
   char* PATH_DELIMITER_temp = util::CharConverter::wideToChar(PATH_DELIMITER, "8859-1");
   DIR* dir = opendir(directory_temp); 
   char path[MAX_PATH];
-  strcpy(path,directory_temp);
+  strcpy(path, directory_temp);
   strcat(path, PATH_DELIMITER_temp);
   char* pathP = path + strlen(path);
 #else
   char* directory_temp = directory;
   DIR* dir = opendir(directory_temp); 
   char path[MAX_PATH];
-  strcpy(path,directory_temp);
+  strcpy(path, directory_temp);
   strcat(path, PATH_DELIMITER);
   char* pathP = path + strlen(path);
 #endif
@@ -184,29 +184,29 @@ void FSDirectory::create(){
   struct dirent* fl = readdir(dir);
   struct Struct_Stat buf;
 
-  while ( fl != NULL ){
+  while (fl != NULL){
 #ifdef _WIN32
-    fstringCat(pathP,fl->d_name);
-    int ret = Cmd_Stat(path,&buf);
+    fstringCat(pathP, fl->d_name);
+    int ret = Cmd_Stat(path, &buf);
 #else
     strcat(pathP, fl->d_name);
-    int ret = stat(path,&buf);
+    int ret = stat(path, &buf);
 #endif
     if ( buf.st_mode & S_IFDIR ) {
 #ifdef _WIN32
-      if ( (fstringCompare(fl->d_name, CONST_STRING("."))) && (fstringCompare(fl->d_name, CONST_STRING(".."))) ) {
+      if ((fstringCompare(fl->d_name, CONST_STRING("."))) && (fstringCompare(fl->d_name, CONST_STRING("..")))) {
         fchar_t buf[MAX_PATH];
-        fstringPrintF(buf, CONST_STRING("%s/%s"),directory,fl->d_name);
-        if ( unlinkFile( buf ) == -1 )
+        fstringPrintF(buf, CONST_STRING("%s/%s"), directory, fl->d_name);
+        if (unlinkFile(buf) == -1)
 #else
-      if ( (strcmp(fl->d_name, CONST_STRING("."))) && (strcmp(fl->d_name, CONST_STRING(".."))) ) {
+      if ((strcmp(fl->d_name, CONST_STRING("."))) && (strcmp(fl->d_name, CONST_STRING("..")))) {
         char buf[MAX_PATH];
-        sprintf(buf, "%s/%s",directory_temp,fl->d_name);
-        if ( unlink( buf ) == -1 )
+        sprintf(buf, "%s/%s", directory_temp, fl->d_name);
+        if (unlink(buf) == -1)
 #endif
         UNLOCK_MUTEX(FSDIR_CREATE);
         closedir(dir);
-        _THROWC( "Couldn't delete file ");
+        _THROWC("Couldn't delete file ");
       }
     }
     fl = readdir(dir);
@@ -223,26 +223,26 @@ void FSDirectory::create(){
 
 void FSDirectory::priv_getFN(fchar_t* buffer, const fchar_t* name){
   buffer[0] = 0;
-  fstringCopy(buffer,directory);
+  fstringCopy(buffer, directory);
   fstringCat(buffer, PATH_DELIMITER );
-  fstringCat(buffer,name);
+  fstringCat(buffer, name);
 }
 
 int FSDirectory::priv_getStat(const fchar_t* name, struct Struct_Stat* ret){
   fchar_t buffer[MAX_PATH];
-  priv_getFN(buffer,name);
-  return Cmd_Stat( buffer, ret );
+  priv_getFN(buffer, name);
+  return Cmd_Stat(buffer, ret);
 }
 
 FSDirectory::~FSDirectory(){
   //DIRECTORIES.remove( F_TO_CHAR_T(getDirName()));
-  DIRECTORIES.erase( getDirName());
+  DIRECTORIES.erase(getDirName());
 }
 
 bool FSDirectory::fileExists(const fchar_t* name){
   fchar_t fl[MAX_PATH];
   priv_getFN(fl, name);
-  return util::Misc::dir_Exists( fl );
+  return util::Misc::dir_Exists(fl);
 }
 
 fchar_t* FSDirectory::getDirName(){
@@ -252,9 +252,9 @@ fchar_t* FSDirectory::getDirName(){
 //static
 FSDirectory& FSDirectory::getDirectory(const fchar_t* file, const bool create){
   LOCK_MUTEX(DIRECTORIES_MUTEX);
-  if ( DIRECTORIES.count(file) ==1  ){
+  if (DIRECTORIES.count(file) == 1){
     FSDirectory* itm = (FSDirectory*)DIRECTORIES[file];
-    if ( create )
+    if (create)
       itm->create();
     
     LOCK_MUTEX(itm->LOCK_MUTEX);
@@ -278,7 +278,7 @@ FSDirectory& FSDirectory::getDirectory(const fchar_t* file, const bool create){
 
 long_t FSDirectory::fileModified(const fchar_t* name) {
   struct Struct_Stat buf;
-  if ( priv_getStat(name,&buf) == -1 )
+  if (priv_getStat(name,&buf) == -1)
     return 0;
   else
     return buf.st_mtime;
@@ -288,16 +288,16 @@ long_t FSDirectory::fileModified(const fchar_t* name) {
 long_t FSDirectory::fileModified(const fchar_t* dir, const fchar_t* name){
   struct Struct_Stat buf;
   fchar_t buffer[MAX_PATH];
-  fstringCopy(buffer,dir);
-  fstringCat(buffer,PATH_DELIMITER);
-  fstringCat(buffer,name);
+  fstringCopy(buffer, dir);
+  fstringCat(buffer, PATH_DELIMITER);
+  fstringCat(buffer, name);
   Cmd_Stat( buffer, &buf );
   return buf.st_mtime;
 }
 
 long_t FSDirectory::fileLength(const fchar_t* name){
   struct Struct_Stat buf;
-  if ( priv_getStat(name, &buf) == -1 )
+  if (priv_getStat(name, &buf) == -1)
     return 0;
   else
     return buf.st_size;
@@ -306,14 +306,14 @@ long_t FSDirectory::fileLength(const fchar_t* name){
 void FSDirectory::deleteFile(const fchar_t* name, const bool throwError)  {
   fchar_t fl[MAX_PATH];
   priv_getFN(fl, name);
-  if ( unlinkFile(fl) == -1 && throwError){
+  if (unlinkFile(fl) == -1 && throwError){
     char_t buffer[200];
     stringPrintF(buffer, _T("couldn't delete %s"),name);
-    _THROWX( buffer );
+    _THROWX(buffer);
   }
   fchar_t fLen[MAX_PATH];
-  fstringCopy(fLen,name);
-  fstringCat(fLen,CONST_STRING(".len"));
+  fstringCopy(fLen, name);
+  fstringCat(fLen, CONST_STRING(".len"));
   unlinkFile(fLen);
 }
 
@@ -327,31 +327,31 @@ void FSDirectory::renameFile(const fchar_t* from, const fchar_t* to){
 
   fchar_t oldLen[MAX_PATH];
   fchar_t nuLen[MAX_PATH];
-  fstringCopy(oldLen,old);
-  fstringCat(oldLen,CONST_STRING(".len"));
-  fstringCopy(nuLen,nu);
-  fstringCat(nuLen,CONST_STRING(".len"));
+  fstringCopy(oldLen, old);
+  fstringCat(oldLen, CONST_STRING(".len"));
+  fstringCopy(nuLen, nu);
+  fstringCat(nuLen, CONST_STRING(".len"));
 
   /* This is not atomic.  If the program crashes between the call to
   delete() and the call to renameTo() then we're screwed, but I've
   been unable to figure out how else to do this... */
   
   if ( util::Misc::dir_Exists(nu) )
-    if( unlinkFile(nu) != 0 ){
+    if(unlinkFile(nu) != 0){
       char_t buffer[200];
-      stringPrintF(buffer, _T("couldn't delete %s"),to);
+      stringPrintF(buffer, _T("couldn't delete %s"), to);
       
       UNLOCK_MUTEX(FSDIR_RENAME);
-      _THROWX( buffer );
+      _THROWX(buffer);
     }
     unlinkFile(nuLen);
   if ( fileRename(old,nu) != 0 ){
       char_t buffer[200];
-      stringPrintF(buffer, _T("couldn't rename %s to %s"), from, to );
+      stringPrintF(buffer, _T("couldn't rename %s to %s"), from, to);
       UNLOCK_MUTEX(FSDIR_RENAME);
-    _THROWX( buffer );
+    _THROWX(buffer);
   }
-  fileRename(oldLen,nuLen);
+  fileRename(oldLen, nuLen);
   UNLOCK_MUTEX(FSDIR_RENAME);
 }
 
@@ -359,23 +359,23 @@ OutputStream& FSDirectory::createFile(const fchar_t* name) {
   fchar_t fl[MAX_PATH];
   priv_getFN(fl, name);
 
-  return *new FSOutputStream( fl );
+  return *new FSOutputStream(fl);
 }
 
 InputStream& FSDirectory::openFile(const fchar_t* name) {
   fchar_t fl[MAX_PATH];
   priv_getFN(fl, name);
-  return *new FSInputStream( fl );
+  return *new FSInputStream(fl);
 }
 
 NSLock* FSDirectory::makeLock(const fchar_t* name) {
   fchar_t dr[MAX_PATH];
-  priv_getFN(dr,name);
-  return new FSLock( dr );
+  priv_getFN(dr, name);
+  return new FSLock(dr);
 }
 
 void FSDirectory::refInc(){
-  refCount ++;
+  refCount++;
 }
 
 void FSDirectory::close() {
@@ -383,8 +383,8 @@ void FSDirectory::close() {
   if (--refCount <= 0) {
     LOCK_MUTEX(DIRECTORIES_MUTEX);
     Directory* d = DIRECTORIES[getDirName()];
-    if ( d != NULL ){
-      DIRECTORIES.erase( getDirName());
+    if (d != NULL){
+      DIRECTORIES.erase(getDirName());
       delete d;
     }
     UNLOCK_MUTEX(DIRECTORIES_MUTEX);
@@ -396,28 +396,28 @@ void FSDirectory::close() {
 
 
 
-FSLock::FSLock ( const fchar_t* name ):
-  fname( fstringDuplicate(name) )
+FSLock::FSLock (const fchar_t* name):
+  fname(fstringDuplicate(name))
 {
 }
 FSLock::~FSLock(){
   delete[] fname;
 }
 bool FSLock::obtain() {
-  if ( util::Misc::dir_Exists(fname) ) {
+  if (util::Misc::dir_Exists(fname)) {
     std::cerr << " ERROR: " << fname << " exists already!" << endl;
     return false;
   }
   
   int r = openFile(fname,  O_RDWR | O_CREAT, _S_IREAD | _S_IWRITE);
-  if ( r == -1 )
+  if (r == -1)
     return false;
 
   _close(r);
   return true;
 }
 void FSLock::release() {
-  unlinkFile( fname );
+  unlinkFile(fname);
 }
 
 }}

@@ -9,15 +9,16 @@
 
 namespace NSLib{ namespace search{
 
-
 PhraseScorer::PhraseScorer(TermPositions** tps, const int tpsLength, l_byte_t* n, float w):
 	norms(n),
 	weight(w),
 	pq( *new PhraseQueue(tpsLength) )
 {
 	// use PQ to build a sorted list of PhrasePositions
+	pq.clear();
 	for (int i = 0; i < tpsLength; i++)
 		pq.put( new PhrasePositions(*tps[i], i) );
+
 	pqToList();
 }
 

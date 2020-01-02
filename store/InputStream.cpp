@@ -2,7 +2,7 @@
 
 #include "util/Arrays.h"
 
-#include <iostream>
+// #include <iostream>
 
 using namespace std;
 using namespace NSLib::util;
@@ -28,17 +28,22 @@ InputStream::InputStream(InputStream& clone):
   chars_length(0),
   filePath(clone.filePath)
 {
-  if ( clone.buffer != NULL && clone.bufferLength>0) {
-    cerr << "Clone BufferLength=" << bufferLength << endl;
-    //buffer = new l_byte_t[bufferLength];
-    memcpy(buffer, clone.buffer, sizeof(l_byte_t)*bufferLength);
+  if ( clone.buffer != NULL && clone.bufferLength > 0) {
+    // cerr << "Clone BufferLength=" << sizeof(l_byte_t)*bufferLength << " buffer: " << buffer << ";";
+
+    memcpy(buffer, clone.buffer, sizeof(l_byte_t) * bufferLength);
+    // cerr << " InputStream Init Done." << endl;
   }
 }
 
 l_byte_t InputStream::readByte() {
-  if (bufferPosition >= bufferLength)
+  // cerr << "readByte-bpos "<< bufferPosition <<" bufferLength "<<bufferLength;
+  if (bufferPosition >= bufferLength){
+    //  cerr << "refill-bpos:"<<bufferPosition <<" len:"<<bufferLength<<" buf:"<< buffer << " -- ";
     refill();
+  }
 
+  // cerr << "readByte_End " <<endl ;
   return buffer[bufferPosition++];
 }
 
@@ -90,8 +95,8 @@ char* InputStream::readByteString()
   int len = readVInt();
   if ( len == 0 )
     return "";
-  char* str = new char[len+1];
-  for (int i=0; i<len; i++)
+  char* str = new char[len + 1];
+  for (int i = 0; i < len; i++)
      str[i] = readByte();
   str[len] = 0;
 
@@ -110,7 +115,7 @@ char_t* InputStream::readString(const bool unique){
 
     if ( chars != NULL )
       delete[] chars;
-    chars = new char_t[len+1];
+    chars = new char_t[len + 1];
     chars_length = len;
   }
   readChars(chars, 0, len);
@@ -123,7 +128,7 @@ char_t* InputStream::readString(const bool unique){
     return chars;
 }
 
-void InputStream::readChars( char_t* buffer, const int start, const int len) {
+void InputStream::readChars(char_t* buffer, const int start, const int len) {
   const int end = start + len;
   for (int i = start; i < end; i++) {
     l_byte_t b = readByte();
@@ -160,9 +165,12 @@ long_t InputStream::Length() {
 }
 
 void InputStream::close(){
-  if( chars != NULL ) 
-    delete[] chars ; chars = NULL;
-  
+  if ( chars != NULL ) {
+    delete[] chars ; 
+    chars = NULL;
+  }
+ /* if (buffer != NULL)
+		delete[] buffer;*/
   bufferLength = 0;
   bufferPosition = 0;
   bufferStart = 0;
@@ -178,7 +186,7 @@ void InputStream::refill() {
   if (end > length)          // don't read past EOF
     end = length;
   bufferLength = (int)(end - start);
-  if (bufferLength == 0)
+  if (bufferLength <= 0)
     _THROWC( "InputStream read past EOF");
   //if ( buffer == NULL) 
   //  buffer = new l_byte_t[bufferLength];

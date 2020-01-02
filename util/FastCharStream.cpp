@@ -22,7 +22,7 @@ namespace NSLib{ namespace util {
       return '\0';
     }
     char_t ch = input.readChar();
-    col = input.position()+1;
+    col = input.position() + 1;
     
     if(ch == '\n') 
     {

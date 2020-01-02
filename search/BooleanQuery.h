@@ -16,7 +16,7 @@ namespace NSLib{ namespace search {
   // queries, typically {@link TermQuery}s or {@link PhraseQuery}s.
   class BooleanQuery:public Query {
   private:
-    NSLib::util::VoidList<BooleanClause*>clauses;
+    NSLib::util::VoidList<BooleanClause*> clauses;
     
   public:
     // Constructs an empty boolean query. 
